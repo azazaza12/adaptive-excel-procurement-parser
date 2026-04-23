@@ -14,6 +14,7 @@ from app.infrastructure.extraction.excel_imcp.base_abstractions import (
     MatchAnchor,
     StringConverter,
 )
+from app.infrastructure.extraction.excel_imcp.base_sheet import BaseSheet
 from app.infrastructure.extraction.excel_imcp.extractor_registry import (
     SheetExtractorRegistry,
     SheetType,
@@ -24,6 +25,7 @@ from app.infrastructure.extraction.excel_imcp.goods_sheet_extractor import (
 from app.infrastructure.extraction.excel_imcp.works_services_sheet_extractor import (
     extract_works_sheet,
 )
+from app.infrastructure.extraction.excel_imcp.sheet_factory import SheetFactory
 
 
 __all__ = [
@@ -31,6 +33,7 @@ __all__ = [
     "BaseAnchor",
     "BaseColumn",
     "BaseConverter",
+    "BaseSheet",
     "BaseList",
     "DecimalConverter",
     "DynamicRowData",
@@ -39,6 +42,7 @@ __all__ = [
     "IdentityConverter",
     "MatchAnchor",
     "SheetExtractorRegistry",
+    "SheetFactory",
     "SheetType",
     "StringConverter",
     "extract_goods_sheet",
