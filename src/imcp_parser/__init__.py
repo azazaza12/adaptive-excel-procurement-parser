@@ -2,6 +2,18 @@ from app.infrastructure.extraction.excel_imcp.dynamic_table_extractor import (
     DynamicRowData,
     DynamicTableExtractor,
 )
+from app.infrastructure.extraction.excel_imcp.base_abstractions import (
+    AnyOfAnchors,
+    BaseAnchor,
+    BaseColumn,
+    BaseConverter,
+    BaseList,
+    DecimalConverter,
+    ExactAnchor,
+    IdentityConverter,
+    MatchAnchor,
+    StringConverter,
+)
 from app.infrastructure.extraction.excel_imcp.extractor_registry import (
     SheetExtractorRegistry,
     SheetType,
@@ -15,10 +27,20 @@ from app.infrastructure.extraction.excel_imcp.works_services_sheet_extractor imp
 
 
 __all__ = [
+    "AnyOfAnchors",
+    "BaseAnchor",
+    "BaseColumn",
+    "BaseConverter",
+    "BaseList",
+    "DecimalConverter",
     "DynamicRowData",
     "DynamicTableExtractor",
+    "ExactAnchor",
+    "IdentityConverter",
+    "MatchAnchor",
     "SheetExtractorRegistry",
     "SheetType",
+    "StringConverter",
     "extract_goods_sheet",
     "extract_works_sheet",
 ]
