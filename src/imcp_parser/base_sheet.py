@@ -18,3 +18,10 @@ class BaseSheet(ABC, Generic[SheetResultT]):
     @abstractmethod
     def extract(self) -> SheetResultT:
         pass
+
+    
+    @abstractmethod
+    def apply_to_result(self, target: ExcelIMCPResult, extracted: SheetResultT,) - None
+    pass
+
+    

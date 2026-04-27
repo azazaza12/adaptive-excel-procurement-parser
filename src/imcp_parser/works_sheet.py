@@ -136,3 +136,8 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
         if header is not None:
             return True
         return find_anchor_row_idx(ws, _IMCP_ANCHOR_LIMIT) is not None
+
+    def apply_to_result(self, target: ExcelIMCPResult, extracted: WorksSheetParseResult) -> None:
+        target.works_imcp_avg = extracted.imcp_avg
+        target.works_imcp_limit = extracted.imcp_limit
+        target.works_orgs_amounts = extracted.orgs_amounts
