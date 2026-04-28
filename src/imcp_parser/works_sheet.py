@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from decimal import Decimal
+
 from openpyxl.worksheet.worksheet import Worksheet
 
 from app.domain.entities.imcp.result import IMCPResult
@@ -7,7 +9,6 @@ from app.infrastructure.extraction.imcp.base_abstractions import DecimalConverte
 from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
 from app.infrastructure.extraction.imcp.common import (
     advance_empty_rows_series,
-    extract_amount_by_anchor,
     find_anchor_row_idx,
     is_stop_row_by_anchor_match,
     match_anchor,
@@ -24,7 +25,7 @@ _STOP_ROW_ANCHORS = (
     "инструкц",
 )
 _IMCP_ANCHOR_AVG = "начальн максимальн цен договор средн арифметическ"
-_IMCP_ANCHOR_LIMIT = "начальн максимальн цен договор лимит финансирован"
+_IMCP_ANCHOR_LIMIT = "лимит финансирован"
 _MAX_EMPTY_ROWS_IN_SERIES = 3
 
 
@@ -69,14 +70,51 @@ def _find_works_header(ws: Worksheet) -> WorksHeader | None:
     return None
 
 
-def _extract_org_amount_rows(
+def _row_has_anchor(ws: Worksheet, *, row_idx: int, anchor: str) -> bool:
+    for col_idx in range(1, ws.max_column + 1):
+        value = ws.cell(row=row_idx, column=col_idx).value
+        if isinstance(value, str) and match_anchor(value, anchor):
+            return True
+    return False
+
+
+def _row_has_any_anchor(ws: Worksheet, *, row_idx: int, anchors: tuple[str, ...]) -> bool:
+    return any(_row_has_anchor(ws, row_idx=row_idx, anchor=anchor) for anchor in anchors)
+
+
+def _extract_amount_from_row(
+    ws: Worksheet, *, row_idx: int, amount_col_idx: int
+) -> Decimal | None:
+    amount_converter = DecimalConverter()
+    amount_from_header_column = amount_converter.convert(
+        ws.cell(row=row_idx, column=amount_col_idx).value
+    )
+    if amount_from_header_column is not None:
+        return amount_from_header_column
+
+    for col_idx in range(ws.max_column, 0, -1):
+        amount = amount_converter.convert(ws.cell(row=row_idx, column=col_idx).value)
+        if amount is not None:
+            return amount
+    return None
+
+
+def _extract_org_amount_rows_and_imcp(
     ws: Worksheet, header: WorksHeader
-) -> list[WorksOrgAmountResult]:
+) -> tuple[list[WorksOrgAmountResult], Decimal | None, Decimal | None]:
     organizations: list[WorksOrgAmountResult] = []
     name_converter = StringConverter()
     amount_converter = DecimalConverter()
     empty_rows_in_series = 0
+    imcp_avg: Decimal | None = None
+    imcp_limit: Decimal | None = None
+    nmcd_row_idx: int | None = None
+
     for row_idx in range(header.header_row_idx + 1, ws.max_row + 1):
+        if _row_has_anchor(ws, row_idx=row_idx, anchor=_IMCP_ANCHOR_NMCD_ROW):
+            nmcd_row_idx = row_idx
+            break
+
         name = name_converter.convert(
             ws.cell(row=row_idx, column=header.org_col_idx).value
         )
@@ -108,7 +146,33 @@ def _extract_org_amount_rows(
                 amount=amount,
             )
         )
-    return organizations
+
+    if nmcd_row_idx is not None:
+        for row_idx in range(nmcd_row_idx, ws.max_row + 1):
+            if imcp_avg is None and _row_has_anchor(
+                ws, row_idx=row_idx, anchor=_IMCP_ANCHOR_AVG
+            ):
+                imcp_avg = _extract_amount_from_row(
+                    ws,
+                    row_idx=row_idx,
+                    amount_col_idx=header.amount_col_idx,
+                )
+
+            if imcp_limit is None and _row_has_any_anchor(
+                ws, row_idx=row_idx, anchors=_IMCP_LIMIT_ROW_ANCHORS
+            ):
+                imcp_limit = _extract_amount_from_row(
+                    ws,
+                    row_idx=row_idx,
+                    amount_col_idx=header.amount_col_idx,
+                )
+
+            if imcp_avg is not None and imcp_limit is not None:
+                break
+            if _row_has_anchor(ws, row_idx=row_idx, anchor="инструкц"):
+                break
+
+    return organizations, imcp_avg, imcp_limit
 
 
 
@@ -122,12 +186,16 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
     def extract(self) -> WorksSheetParseResult:
         header = _find_works_header(self.ws)
         org_amount_rows: list[WorksOrgAmountResult] = []
+        imcp_avg: Decimal | None = None
+        imcp_limit: Decimal | None = None
         if header is not None:
-            org_amount_rows = _extract_org_amount_rows(self.ws, header)
+            org_amount_rows, imcp_avg, imcp_limit = _extract_org_amount_rows_and_imcp(
+                self.ws, header
+            )
         orgs_amounts = org_amount_rows or None
         return WorksSheetParseResult(
-            imcp_avg=extract_amount_by_anchor(self.ws, _IMCP_ANCHOR_AVG),
-            imcp_limit=extract_amount_by_anchor(self.ws, _IMCP_ANCHOR_LIMIT),
+            imcp_avg=imcp_avg,
+            imcp_limit=imcp_limit,
             orgs_amounts=orgs_amounts,
         )
 
