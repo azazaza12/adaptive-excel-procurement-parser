@@ -43,7 +43,7 @@ _MAX_EMPTY_ROWS_IN_SERIES = 3
 class WorksRow:
     name: str | None
     amount: Decimal
-    id: int
+    row_idx: int
 
 
 
@@ -66,22 +66,22 @@ def _find_works_header(ws: Worksheet) -> tuple[int, int] | None:
         for cell in row:
             value = cell.value
 
-            if org_col_idx is None and is_org_header(value):
+            if org_col_idx is None and _is_org_header(value):
                 org_col_idx = cell.column
                 header_row_idx = row_idx
                 continue
-            if amount_col_idx is None and is_amount_header(value):
+            if amount_col_idx is None and _is_amount_header(value):
                 amount_col_idx = cell.column
                 continue
     return header_row_idx, org_col_idx, amount_col_idx
 
 
-def _extract_works_rows(ws: Worksheet, header: tuple[int, int, int]) -> list[WorksRow]
+def _extract_works_rows(ws: Worksheet, header: tuple[int, int, int]) -> list[WorksRow]:
     rows: list[WorksRow] = []
     header_row_idx, org_col_idx, amount_col_idx = header
     empty_rows_in_series = 0
-    for row_idx in range(header_row_idx + 1, self.ws.max_row + 1):
-        name = StringConverter().convert(self.ws.cell(row_idx, org_col_idx).value)
+    for row_idx in range(header_row_idx + 1, ws.max_row + 1):
+        name = StringConverter().convert(ws.cell(row=row_idx, column=org_col_idx).value)
         is_empty_name = name is None
         empty_rows_in_series, should_stop = advance_empty_rows_series(
             empty_rows_in_series,
@@ -97,11 +97,11 @@ def _extract_works_rows(ws: Worksheet, header: tuple[int, int, int]) -> list[Wor
         if is_stop_row_by_anchor_match(name, _STOP_ROW_ANCHORS):
             break
 
-        amount = DecimalConverter().convert(self.ws.cell(row_idx, amount_col_idx).value)
+        amount = DecimalConverter().convert(ws.cell(row=row_idx, column=amount_col_idx).value)
         if amount is None:
             continue
 
-        rows.append(WorksRow(name=name, amount=amount, id=row_idx))
+        rows.append(WorksRow(name=name, amount=amount, row_idx=row_idx))
     return rows
 
 
