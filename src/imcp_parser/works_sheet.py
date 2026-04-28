@@ -5,24 +5,17 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from app.domain.entities.imcp.result import WorksOrgsAmountsResult, IMCPResult
 from app.domain.entities.imcp.works_result import WorksOrgAmountResult
-from app.infrastructure.extraction.imcp.base_abstractions import (
-    BaseList,
-    BaseColumn,
-    DecimalConverter,
-    MatchAnchor,
-    StringConverter,
-)
+from app.infrastructure.extraction.imcp.base_abstractions import DecimalConverter, StringConverter
 from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
 from app.infrastructure.extraction.imcp.common import (
     advance_empty_rows_series,
     extract_amount_by_anchor,
     find_anchor_row_idx,
-    find_header_columns,
     is_stop_row_by_anchor_match,
+    match_anchor,
     norm_text,
 )
 from app.infrastructure.extraction.imcp.models import WorksSheetParseResult
-from app.infrastructure.extraction.imcp.common import norm_text, match_anchor
 
 
 _WORKS_SHEET_TITLE_ANCHORS = ("работ", "услуг")
@@ -46,6 +39,13 @@ class WorksRow:
     row_idx: int
 
 
+@dataclass(slots=True)
+class WorksHeader:
+    header_row_idx: int
+    org_col_idx: int
+    amount_col_idx: int
+
+
 
 def _is_amount_header(value: object) -> bool:
     if not isinstance(value, str):
@@ -58,30 +58,35 @@ def _is_org_header(value: object) -> bool:
         return False
     return match_anchor(value, "организац")
 
-def _find_works_header(ws: Worksheet) -> tuple[int, int] | None:
+def _find_works_header(ws: Worksheet) -> WorksHeader | None:
     for row_idx, row in enumerate(ws.iter_rows(), start=1):
         org_col_idx: int | None = None
         amount_col_idx: int | None = None
-
         for cell in row:
             value = cell.value
 
             if org_col_idx is None and _is_org_header(value):
                 org_col_idx = cell.column
-                header_row_idx = row_idx
-                continue
             if amount_col_idx is None and _is_amount_header(value):
                 amount_col_idx = cell.column
-                continue
-    return header_row_idx, org_col_idx, amount_col_idx
+        if org_col_idx is not None and amount_col_idx is not None:
+            return WorksHeader(
+                header_row_idx=row_idx,
+                org_col_idx=org_col_idx,
+                amount_col_idx=amount_col_idx,
+            )
+    return None
 
 
-def _extract_works_rows(ws: Worksheet, header: tuple[int, int, int]) -> list[WorksRow]:
+def _extract_works_rows(ws: Worksheet, header: WorksHeader) -> list[WorksRow]:
     rows: list[WorksRow] = []
-    header_row_idx, org_col_idx, amount_col_idx = header
+    name_converter = StringConverter()
+    amount_converter = DecimalConverter()
     empty_rows_in_series = 0
-    for row_idx in range(header_row_idx + 1, ws.max_row + 1):
-        name = StringConverter().convert(ws.cell(row=row_idx, column=org_col_idx).value)
+    for row_idx in range(header.header_row_idx + 1, ws.max_row + 1):
+        name = name_converter.convert(
+            ws.cell(row=row_idx, column=header.org_col_idx).value
+        )
         is_empty_name = name is None
         empty_rows_in_series, should_stop = advance_empty_rows_series(
             empty_rows_in_series,
@@ -97,7 +102,9 @@ def _extract_works_rows(ws: Worksheet, header: tuple[int, int, int]) -> list[Wor
         if is_stop_row_by_anchor_match(name, _STOP_ROW_ANCHORS):
             break
 
-        amount = DecimalConverter().convert(ws.cell(row=row_idx, column=amount_col_idx).value)
+        amount = amount_converter.convert(
+            ws.cell(row=row_idx, column=header.amount_col_idx).value
+        )
         if amount is None:
             continue
 
