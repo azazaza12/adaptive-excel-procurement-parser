@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from app.infrastructure.extraction.excel_imcp.common import norm_text, to_decimal
+from app.infrastructure.extraction.imcp.common import norm_text, to_decimal
 
 
 class CellConverter(ABC):

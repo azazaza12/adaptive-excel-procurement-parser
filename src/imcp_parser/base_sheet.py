@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, ClassVar
 
 from openpyxl.worksheet.worksheet import Worksheet
+from app.domain.entities.imcp.result import IMCPResult
 
 SheetResultT = TypeVar("SheetResultT")
 
@@ -21,6 +22,11 @@ class BaseSheet(ABC, Generic[SheetResultT]):
             return
         BaseSheet._registry.append(cls)
 
+    
+    @classmethod
+    def registered(cls) -> tuple[type["BaseSheet"], ...]:
+        return tuple(BaseSheet._registry)
+
     @classmethod
     @abstractmethod
     def is_me(cls, ws: Worksheet) -> bool:
@@ -30,8 +36,9 @@ class BaseSheet(ABC, Generic[SheetResultT]):
     def extract(self) -> SheetResultT:
         pass
 
-    
     @abstractmethod
-    def apply_to_result(self, target: ExcelIMCPResult, extracted: SheetResultT,) - None
-    pass
+    def apply_to_result(self, target: IMCPResult, extracted: SheetResultT) -> None:
+        pass
+
+    
 

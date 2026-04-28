@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from openpyxl import Workbook
 
-from app.infrastructure.extraction.excel_imcp.base_abstractions import (
+from app.infrastructure.extraction.imcp.base_abstractions import (
     AnyOfAnchors,
     BaseList,
     BaseColumn,

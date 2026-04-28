@@ -2,17 +2,17 @@ from dataclasses import dataclass
 
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.domain.entities.excel.result import WorksOrgsAmountsResult
-from app.domain.entities.excel.works_services_result import WorksOrgAmountResult
-from app.infrastructure.extraction.excel_imcp.base_abstractions import (
+from app.domain.entities.imcp.result import WorksOrgsAmountsResult, IMCPResult
+from app.domain.entities.imcp.works_result import WorksOrgAmountResult
+from app.infrastructure.extraction.imcp.base_abstractions import (
     BaseList,
     BaseColumn,
     DecimalConverter,
     MatchAnchor,
     StringConverter,
 )
-from app.infrastructure.extraction.excel_imcp.base_sheet import BaseSheet
-from app.infrastructure.extraction.excel_imcp.common import (
+from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
+from app.infrastructure.extraction.imcp.common import (
     advance_empty_rows_series,
     extract_amount_by_anchor,
     find_anchor_row_idx,
@@ -20,7 +20,7 @@ from app.infrastructure.extraction.excel_imcp.common import (
     is_stop_row_by_anchor_match,
     norm_text,
 )
-from app.infrastructure.extraction.excel_imcp.models import WorksSheetParseResult
+from app.infrastructure.extraction.imcp.models import WorksSheetParseResult
 
 
 _WORKS_SHEET_TITLE_ANCHORS = ("работ", "услуг")
@@ -137,7 +137,7 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
             return True
         return find_anchor_row_idx(ws, _IMCP_ANCHOR_LIMIT) is not None
 
-    def apply_to_result(self, target: ExcelIMCPResult, extracted: WorksSheetParseResult) -> None:
+    def apply_to_result(self, target: IMCPResult, extracted: WorksSheetParseResult) -> None:
         target.works_imcp_avg = extracted.imcp_avg
         target.works_imcp_limit = extracted.imcp_limit
         target.works_orgs_amounts = extracted.orgs_amounts

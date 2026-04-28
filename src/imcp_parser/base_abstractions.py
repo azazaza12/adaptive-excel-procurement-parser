@@ -4,7 +4,7 @@ from typing import Any, Callable, Generic, TypeVar
 
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.infrastructure.extraction.excel_imcp.common import match_anchor, norm_text, to_decimal
+from app.infrastructure.extraction.imcp.common import match_anchor, norm_text, to_decimal
 
 ConvertedT = TypeVar("ConvertedT")
 RowT = TypeVar("RowT")

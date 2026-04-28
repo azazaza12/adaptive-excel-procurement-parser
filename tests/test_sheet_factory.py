@@ -1,8 +1,8 @@
 from openpyxl import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.infrastructure.extraction.excel_imcp.base_sheet import BaseSheet
-from app.infrastructure.extraction.excel_imcp.sheet_factory import SheetFactory
+from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
+from app.infrastructure.extraction.imcp.sheet_factory import SheetFactory
 
 
 class _WorksSheet(BaseSheet[str]):

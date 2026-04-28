@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.infrastructure.extraction.excel_imcp.common import (
+from app.infrastructure.extraction.imcp.common import (
     advance_empty_rows_series,
     find_anchor_columns_range_in_row_window,
     find_header_columns,
@@ -13,7 +13,7 @@ from app.infrastructure.extraction.excel_imcp.common import (
     is_stop_row_by_anchor_match,
     match_anchor,
 )
-from app.infrastructure.extraction.excel_imcp.models import (
+from app.infrastructure.extraction.imcp.models import (
     ExtractorConfig,
     HeaderAnchorPattern,
     HeaderColumns,

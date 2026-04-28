@@ -2,15 +2,15 @@ from decimal import Decimal
 
 from pydantic import BaseModel
 
-from app.domain.entities.excel.goods_result import (
+from app.domain.entities.imcp.goods_result import (
     GoodsOrgsAmountsResult,
 )
-from app.domain.entities.excel.works_services_result import (
+from app.domain.entities.imcp.works_result import (
     WorksOrgsAmountsResult,
 )
 
 
-class ExcelIMCPResult(BaseModel):
+class IMCPResult(BaseModel):
     goods_imcp_avg: Decimal | None = None
     works_imcp_avg: Decimal | None = None
     works_imcp_limit: Decimal | None = None

@@ -3,7 +3,7 @@ from typing import Any
 
 from openpyxl.workbook.workbook import Workbook
 
-from app.infrastructure.extraction.excel_imcp.base_sheet import BaseSheet
+from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
 
 SheetClass = type[BaseSheet[Any]]
 

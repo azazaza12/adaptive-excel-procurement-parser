@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-from app.infrastructure.extraction.excel_imcp.dynamic_table_extractor import (
+from app.infrastructure.extraction.imcp.dynamic_table_extractor import (
     AddOrgAmountHandler,
     Aggregator,
     DynamicTableExtractor,
@@ -14,7 +14,7 @@ from app.infrastructure.extraction.excel_imcp.dynamic_table_extractor import (
     SetFieldHandler,
     SetItemNameHandler,
 )
-from app.infrastructure.extraction.excel_imcp.models import (
+from app.infrastructure.extraction.imcp.models import (
     ExtractorConfig,
     HeaderAnchorPattern,
 )

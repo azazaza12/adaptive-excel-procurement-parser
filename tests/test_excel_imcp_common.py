@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from app.infrastructure.extraction.excel_imcp.common import (
+from app.infrastructure.extraction.imcp.common import (
     extract_amount_by_anchor,
     extract_amount_from_row,
     to_decimal,

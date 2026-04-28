@@ -1,24 +1,24 @@
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.domain.entities.excel.goods_result import (
+from app.domain.entities.imcp.goods_result import (
     GoodsItemResult,
     GoodsOrgAmountResult,
     GoodsOrgResult,
     GoodsOrgsAmountsResult,
 )
-from app.infrastructure.extraction.excel_imcp.cell_converters import (
+from app.infrastructure.extraction.imcp.cell_converters import (
     DecimalCellConverter,
     StringCellConverter,
 )
-from app.infrastructure.extraction.excel_imcp.common import (
+from app.infrastructure.extraction.imcp.common import (
     extract_amount_by_anchor,
     find_metric_column_idx,
 )
-from app.infrastructure.extraction.excel_imcp.dynamic_table_extractor import (
+from app.infrastructure.extraction.imcp.dynamic_table_extractor import (
     DynamicRowData,
 )
-from app.infrastructure.extraction.excel_imcp.extractor_builder import ExtractorBuilder
-from app.infrastructure.extraction.excel_imcp.models import (
+from app.infrastructure.extraction.imcp.extractor_builder import ExtractorBuilder
+from app.infrastructure.extraction.imcp.models import (
     GoodsSheetParseResult,
     OrganizationInfo,
     ParsingContext,

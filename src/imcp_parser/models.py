@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from app.domain.entities.excel.goods_result import GoodsOrgsAmountsResult
-from app.domain.entities.excel.works_services_result import WorksOrgsAmountsResult
+from app.domain.entities.imcp.goods_result import GoodsOrgsAmountsResult
+from app.domain.entities.imcp.works_result import WorksOrgsAmountsResult
 
 
 type HeaderAnchorPattern = str | tuple[str, ...]

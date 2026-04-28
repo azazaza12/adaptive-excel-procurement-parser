@@ -6,10 +6,10 @@ from typing import cast
 
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.infrastructure.extraction.excel_imcp.base_table_extractor import (
+from app.infrastructure.extraction.imcp.base_table_extractor import (
     BaseTableExtractor,
 )
-from app.infrastructure.extraction.excel_imcp.models import (
+from app.infrastructure.extraction.imcp.models import (
     ExtractorConfig,
     OrganizationInfo,
     ParsingContext,
