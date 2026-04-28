@@ -469,7 +469,7 @@ def test_extract_works_org_amounts_keeps_order_and_amounts() -> None:
     result = extractor.extract_imcp(content=_wb_to_bytes(wb))
 
     assert result.works_orgs_amounts is not None
-    organizations = result.works_orgs_amounts.organizations
+    organizations = result.works_orgs_amounts
     assert [org.name for org in organizations] == [
         "ООО Гамма Сервис",
         "ООО ДЕЛЬТАСТРОЙ",
@@ -567,7 +567,7 @@ def test_extract_imcp_keeps_works_only_partial_contract() -> None:
     assert result.works_imcp_avg == Decimal("2000000.00")
     assert result.works_imcp_limit == Decimal("1900000.00")
     assert result.works_orgs_amounts is not None
-    assert [org.name for org in result.works_orgs_amounts.organizations] == [
+    assert [org.name for org in result.works_orgs_amounts] == [
         "ООО Альфа"
     ]
 
@@ -620,4 +620,4 @@ def test_extract_imcp_fallback_does_not_reuse_goods_sheet_for_works() -> None:
     assert result.works_imcp_avg == Decimal("2000.00")
     assert result.works_imcp_limit == Decimal("1500.00")
     assert result.works_orgs_amounts is not None
-    assert [org.name for org in result.works_orgs_amounts.organizations] == ["ООО Бета"]
+    assert [org.name for org in result.works_orgs_amounts] == ["ООО Бета"]

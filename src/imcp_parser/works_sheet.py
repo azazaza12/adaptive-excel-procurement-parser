@@ -1,9 +1,7 @@
 from dataclasses import dataclass
-from decimal import Decimal
-
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.domain.entities.imcp.result import WorksOrgsAmountsResult, IMCPResult
+from app.domain.entities.imcp.result import IMCPResult
 from app.domain.entities.imcp.works_result import WorksOrgAmountResult
 from app.infrastructure.extraction.imcp.base_abstractions import DecimalConverter, StringConverter
 from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
@@ -30,13 +28,6 @@ _IMCP_ANCHOR_LIMIT = "начальн максимальн цен договор 
 _MAX_EMPTY_ROWS_IN_SERIES = 3
 
 
-
-
-@dataclass(slots=True)
-class WorksRow:
-    name: str | None
-    amount: Decimal
-    row_idx: int
 
 
 @dataclass(slots=True)
@@ -78,8 +69,10 @@ def _find_works_header(ws: Worksheet) -> WorksHeader | None:
     return None
 
 
-def _extract_works_rows(ws: Worksheet, header: WorksHeader) -> list[WorksRow]:
-    rows: list[WorksRow] = []
+def _extract_org_amount_rows(
+    ws: Worksheet, header: WorksHeader
+) -> list[WorksOrgAmountResult]:
+    organizations: list[WorksOrgAmountResult] = []
     name_converter = StringConverter()
     amount_converter = DecimalConverter()
     empty_rows_in_series = 0
@@ -108,8 +101,14 @@ def _extract_works_rows(ws: Worksheet, header: WorksHeader) -> list[WorksRow]:
         if amount is None:
             continue
 
-        rows.append(WorksRow(name=name, amount=amount, row_idx=row_idx))
-    return rows
+        organizations.append(
+            WorksOrgAmountResult(
+                id=len(organizations) + 1,
+                name=name,
+                amount=amount,
+            )
+        )
+    return organizations
 
 
 
@@ -122,10 +121,10 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
 
     def extract(self) -> WorksSheetParseResult:
         header = _find_works_header(self.ws)
-        rows: list[WorksRow] = []
+        org_amount_rows: list[WorksOrgAmountResult] = []
         if header is not None:
-            rows = _extract_works_rows(self.ws, header)
-        #TODO row to orgs_amounts
+            org_amount_rows = _extract_org_amount_rows(self.ws, header)
+        orgs_amounts = org_amount_rows or None
         return WorksSheetParseResult(
             imcp_avg=extract_amount_by_anchor(self.ws, _IMCP_ANCHOR_AVG),
             imcp_limit=extract_amount_by_anchor(self.ws, _IMCP_ANCHOR_LIMIT),
@@ -139,14 +138,7 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
 
     @staticmethod
     def _has_works_table_header(ws: Worksheet) -> bool:
-        header = find_header_columns(
-            ws,
-            {
-                "item_col_idx": _ORG_HEADER_ANCHOR,
-                "amount": _AMOUNT_HEADER_ANCHOR,
-            },
-        )
-        if header is not None:
+        if _find_works_header(ws) is not None:
             return True
         return find_anchor_row_idx(ws, _IMCP_ANCHOR_LIMIT) is not None
 

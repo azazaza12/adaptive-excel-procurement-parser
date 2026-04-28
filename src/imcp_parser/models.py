@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 
 from app.domain.entities.imcp.goods_result import GoodsOrgsAmountsResult
-from app.domain.entities.imcp.works_result import WorksOrgsAmountsResult
+from app.domain.entities.imcp.works_result import WorksOrgAmountResult
 
 
 type HeaderAnchorPattern = str | tuple[str, ...]
@@ -51,4 +51,4 @@ class GoodsSheetParseResult:
 class WorksSheetParseResult:
     imcp_avg: Decimal | None = None
     imcp_limit: Decimal | None = None
-    orgs_amounts: WorksOrgsAmountsResult | None = None
+    orgs_amounts: list[WorksOrgAmountResult] | None = None
