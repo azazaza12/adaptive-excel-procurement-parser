@@ -28,8 +28,12 @@ class OpenpyxlExcelIMCPExtractor(IExcelIMCPExtractor):
             for sheet_name in wb.sheetnames:
                 ws = wb[sheet_name]
                 sheet = _build_sheet(ws)
-                if sheet is not None:
-                    sheet.extract()
+                if sheet is None:
+                    continue
+                parsed = sheet.extract()
+                sheet.apply_to_result(result, parsed)
+            if result is None:
+                raise ExcelIMCPNotFoundError()
             return result
         finally:
             wb.close()
