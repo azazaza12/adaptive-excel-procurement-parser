@@ -6,7 +6,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from app.domain.entities.imcp.result import IMCPResult
 from app.domain.exceptions import (
-    ExcelIMCPNotFoundError,
+    IMCPNotFoundError,
 )
 from app.domain.service.excel_imcp_extractor import IExcelIMCPExtractor
 from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
@@ -33,7 +33,7 @@ class OpenpyxlExcelIMCPExtractor(IExcelIMCPExtractor):
                 parsed = sheet.extract()
                 sheet.apply_to_result(result, parsed)
             if result is None:
-                raise ExcelIMCPNotFoundError()
+                raise IMCPNotFoundError()
             return result
         finally:
             wb.close()
