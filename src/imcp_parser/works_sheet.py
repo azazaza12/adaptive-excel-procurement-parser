@@ -99,15 +99,13 @@ def _extract_amount_from_row(
     return None
 
 
-def _extract_org_amount_rows_and_imcp(
+def _extract_org_amount_rows_until_nmcd(
     ws: Worksheet, header: WorksHeader
-) -> tuple[list[WorksOrgAmountResult], Decimal | None, Decimal | None]:
+) -> tuple[list[WorksOrgAmountResult], int | None]:
     organizations: list[WorksOrgAmountResult] = []
     name_converter = StringConverter()
     amount_converter = DecimalConverter()
     empty_rows_in_series = 0
-    imcp_avg: Decimal | None = None
-    imcp_limit: Decimal | None = None
     nmcd_row_idx: int | None = None
 
     for row_idx in range(header.header_row_idx + 1, ws.max_row + 1):
@@ -147,31 +145,56 @@ def _extract_org_amount_rows_and_imcp(
             )
         )
 
-    if nmcd_row_idx is not None:
-        for row_idx in range(nmcd_row_idx, ws.max_row + 1):
-            if imcp_avg is None and _row_has_anchor(
-                ws, row_idx=row_idx, anchor=_IMCP_ANCHOR_AVG
-            ):
-                imcp_avg = _extract_amount_from_row(
-                    ws,
-                    row_idx=row_idx,
-                    amount_col_idx=header.amount_col_idx,
-                )
+    return organizations, nmcd_row_idx
 
-            if imcp_limit is None and _row_has_any_anchor(
-                ws, row_idx=row_idx, anchors=_IMCP_LIMIT_ROW_ANCHORS
-            ):
-                imcp_limit = _extract_amount_from_row(
-                    ws,
-                    row_idx=row_idx,
-                    amount_col_idx=header.amount_col_idx,
-                )
 
-            if imcp_avg is not None and imcp_limit is not None:
-                break
-            if _row_has_anchor(ws, row_idx=row_idx, anchor="инструкц"):
-                break
+def _extract_imcp_from_nmcd_block(
+    ws: Worksheet,
+    *,
+    nmcd_row_idx: int | None,
+    amount_col_idx: int,
+) -> tuple[Decimal | None, Decimal | None]:
+    imcp_avg: Decimal | None = None
+    imcp_limit: Decimal | None = None
+    if nmcd_row_idx is None:
+        return imcp_avg, imcp_limit
 
+    for row_idx in range(nmcd_row_idx, ws.max_row + 1):
+        if imcp_avg is None and _row_has_anchor(
+            ws, row_idx=row_idx, anchor=_IMCP_ANCHOR_AVG
+        ):
+            imcp_avg = _extract_amount_from_row(
+                ws,
+                row_idx=row_idx,
+                amount_col_idx=amount_col_idx,
+            )
+
+        if imcp_limit is None and _row_has_any_anchor(
+            ws, row_idx=row_idx, anchors=_IMCP_LIMIT_ROW_ANCHORS
+        ):
+            imcp_limit = _extract_amount_from_row(
+                ws,
+                row_idx=row_idx,
+                amount_col_idx=amount_col_idx,
+            )
+
+        if imcp_avg is not None and imcp_limit is not None:
+            break
+        if _row_has_anchor(ws, row_idx=row_idx, anchor="инструкц"):
+            break
+
+    return imcp_avg, imcp_limit
+
+
+def _extract_org_amount_rows_and_imcp(
+    ws: Worksheet, header: WorksHeader
+) -> tuple[list[WorksOrgAmountResult], Decimal | None, Decimal | None]:
+    organizations, nmcd_row_idx = _extract_org_amount_rows_until_nmcd(ws, header)
+    imcp_avg, imcp_limit = _extract_imcp_from_nmcd_block(
+        ws,
+        nmcd_row_idx=nmcd_row_idx,
+        amount_col_idx=header.amount_col_idx,
+    )
     return organizations, imcp_avg, imcp_limit
 
 
