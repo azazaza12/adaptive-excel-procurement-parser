@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from decimal import Decimal
 
 from openpyxl.worksheet.worksheet import Worksheet
 
@@ -34,6 +35,16 @@ _STOP_ROW_ANCHORS = (
 _IMCP_ANCHOR_AVG = "начальн максимальн цен договор средн арифметическ"
 _IMCP_ANCHOR_LIMIT = "начальн максимальн цен договор лимит финансирован"
 _MAX_EMPTY_ROWS_IN_SERIES = 3
+
+
+
+
+@dataclass(slots=True)
+class WorksRow:
+    name: str | None
+    amount: Decimal
+    id: int
+
 
 
 def _is_amount_header(value: object) -> bool:
@@ -90,16 +101,9 @@ def _extract_works_rows(ws: Worksheet, header: tuple[int, int, int]) -> list[Wor
         if amount is None:
             continue
 
-        rows.append(WorksRow(name=name, amount=amount))
+        rows.append(WorksRow(name=name, amount=amount, id=row_idx))
     return rows
-            
 
-
-
-@dataclass(slots=True)
-class WorksRow:
-    name: str | None
-    amount: object
 
 
 class WorksSheet(BaseSheet[WorksSheetParseResult]):
