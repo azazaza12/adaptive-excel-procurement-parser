@@ -21,6 +21,7 @@ from app.infrastructure.extraction.imcp.common import (
     norm_text,
 )
 from app.infrastructure.extraction.imcp.models import WorksSheetParseResult
+from app.infrastructure.extraction.imcp.common import norm_text, match_anchor
 
 
 _WORKS_SHEET_TITLE_ANCHORS = ("работ", "услуг")
@@ -35,8 +36,68 @@ _IMCP_ANCHOR_LIMIT = "начальн максимальн цен договор 
 _MAX_EMPTY_ROWS_IN_SERIES = 3
 
 
+def _is_amount_header(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    return match_anchor(value, "стоимост") and (match_anchor(value, "работ") or match_anchor(value, "услуг"))
+
+
+def _is_org_header(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    return match_anchor(value, "организац")
+
+def _find_works_header(ws: Worksheet) -> tuple[int, int] | None:
+    for row_idx, row in enumerate(ws.iter_rows(), start=1):
+        org_col_idx: int | None = None
+        amount_col_idx: int | None = None
+
+        for cell in row:
+            value = cell.value
+
+            if org_col_idx is None and is_org_header(value):
+                org_col_idx = cell.column
+                header_row_idx = row_idx
+                continue
+            if amount_col_idx is None and is_amount_header(value):
+                amount_col_idx = cell.column
+                continue
+    return header_row_idx, org_col_idx, amount_col_idx
+
+
+def _extract_works_rows(ws: Worksheet, header: tuple[int, int, int]) -> list[WorksRow]
+    rows: list[WorksRow] = []
+    header_row_idx, org_col_idx, amount_col_idx = header
+    empty_rows_in_series = 0
+    for row_idx in range(header_row_idx + 1, self.ws.max_row + 1):
+        name = StringConverter().convert(self.ws.cell(row_idx, org_col_idx).value)
+        is_empty_name = name is None
+        empty_rows_in_series, should_stop = advance_empty_rows_series(
+            empty_rows_in_series,
+            is_empty=is_empty_name,
+            max_empty_rows_in_series=_MAX_EMPTY_ROWS_IN_SERIES,
+        )
+        if is_empty_name:
+            if should_stop:
+                break
+            continue
+
+
+        if is_stop_row_by_anchor_match(name, _STOP_ROW_ANCHORS):
+            break
+
+        amount = DecimalConverter().convert(self.ws.cell(row_idx, amount_col_idx).value)
+        if amount is None:
+            continue
+
+        rows.append(WorksRow(name=name, amount=amount))
+    return rows
+            
+
+
+
 @dataclass(slots=True)
-class _WorksRow:
+class WorksRow:
     name: str | None
     amount: object
 
@@ -49,70 +110,11 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
         return cls._has_works_table_header(ws)
 
     def extract(self) -> WorksSheetParseResult:
-        header = find_header_columns(
-            self.ws,
-            {
-                "item_col_idx": _ORG_HEADER_ANCHOR,
-                "amount": _AMOUNT_HEADER_ANCHOR,
-            },
-        )
-
-        orgs_amounts: WorksOrgsAmountsResult | None = None
+        header = _find_works_header(self.ws)
+        rows: list[WorksRow] = []
         if header is not None:
-            header_row_idx, _ = header
-            org_column = BaseColumn(
-                self.ws,
-                MatchAnchor(_ORG_HEADER_ANCHOR),
-                converter=StringConverter(),
-                header_row_idx=header_row_idx,
-            )
-            amount_column = BaseColumn(
-                self.ws,
-                MatchAnchor(_AMOUNT_HEADER_ANCHOR),
-                converter=DecimalConverter(),
-                header_row_idx=header_row_idx,
-            )
-            works_list = BaseList(
-                org_column,
-                amount_column,
-                row_builder=lambda name, amount: _WorksRow(name=name, amount=amount),
-            )
-            organizations: list[WorksOrgAmountResult] = []
-            empty_rows_in_series = 0
-            for row_idx in range(header_row_idx + 1, self.ws.max_row + 1):
-                row = works_list.build_row(row_idx)
-                if row is None or row.name is None:
-                    empty_rows_in_series, should_stop = advance_empty_rows_series(
-                        empty_rows_in_series,
-                        is_empty=True,
-                        max_empty_rows_in_series=_MAX_EMPTY_ROWS_IN_SERIES,
-                    )
-                    if should_stop:
-                        break
-                    continue
-
-                empty_rows_in_series, _ = advance_empty_rows_series(
-                    empty_rows_in_series,
-                    is_empty=False,
-                    max_empty_rows_in_series=_MAX_EMPTY_ROWS_IN_SERIES,
-                )
-
-                if is_stop_row_by_anchor_match(row.name, _STOP_ROW_ANCHORS):
-                    break
-                if row.amount is None:
-                    continue
-
-                organizations.append(
-                    WorksOrgAmountResult(
-                        id=len(organizations) + 1,
-                        name=row.name,
-                        amount=row.amount,
-                    )
-                )
-
-            if organizations:
-                orgs_amounts = WorksOrgsAmountsResult(organizations=organizations)
-
+            rows = _extract_works_rows(self.ws, header)
+        #TODO row to orgs_amounts
         return WorksSheetParseResult(
             imcp_avg=extract_amount_by_anchor(self.ws, _IMCP_ANCHOR_AVG),
             imcp_limit=extract_amount_by_anchor(self.ws, _IMCP_ANCHOR_LIMIT),
