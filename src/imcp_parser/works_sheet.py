@@ -5,28 +5,36 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from app.domain.entities.imcp.result import IMCPResult
 from app.domain.entities.imcp.works_result import WorksOrgAmountResult
-from app.infrastructure.extraction.imcp.base_abstractions import DecimalConverter, StringConverter
+from app.infrastructure.extraction.imcp.base_abstractions import (
+    AnyOfAnchors,
+    BaseAnchor,
+    DecimalConverter,
+    MatchAnchor,
+    StringConverter,
+)
 from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
 from app.infrastructure.extraction.imcp.common import (
     advance_empty_rows_series,
     find_anchor_row_idx,
-    is_stop_row_by_anchor_match,
-    match_anchor,
     norm_text,
 )
 from app.infrastructure.extraction.imcp.models import WorksSheetParseResult
 
 
 _WORKS_SHEET_TITLE_ANCHORS = ("работ", "услуг")
-_ORG_HEADER_ANCHOR = "организац"
-_AMOUNT_HEADER_ANCHOR = "стоимост выполнен работ оказан услуг"
-_STOP_ROW_ANCHORS = (
-    "начальн максимальн цен договор",
-    "инструкц",
-)
-_IMCP_ANCHOR_AVG = "начальн максимальн цен договор средн арифметическ"
-_IMCP_ANCHOR_LIMIT = "лимит финансирован"
 _MAX_EMPTY_ROWS_IN_SERIES = 3
+
+_ORG_HEADER_MATCHER = MatchAnchor("организац")
+_AMOUNT_HEADER_COST_MATCHER = MatchAnchor("стоимост")
+_AMOUNT_HEADER_WORKS_OR_SERVICES_MATCHER = AnyOfAnchors(
+    MatchAnchor("работ"),
+    MatchAnchor("услуг"),
+)
+_NMCD_ROW_MATCHER = MatchAnchor("начальн максимальн цен договор")
+_IMCP_AVG_ROW_MATCHER = MatchAnchor("начальн максимальн цен договор средн арифметическ")
+_IMCP_LIMIT_ROW_MATCHER = MatchAnchor("лимит финансирован")
+_INSTRUCTION_ROW_MATCHER = MatchAnchor("инструкц")
+_STOP_ROW_MATCHER = AnyOfAnchors(_NMCD_ROW_MATCHER, _INSTRUCTION_ROW_MATCHER)
 
 
 
@@ -42,13 +50,15 @@ class WorksHeader:
 def _is_amount_header(value: object) -> bool:
     if not isinstance(value, str):
         return False
-    return match_anchor(value, "стоимост") and (match_anchor(value, "работ") or match_anchor(value, "услуг"))
+    return _AMOUNT_HEADER_COST_MATCHER.matches(
+        value
+    ) and _AMOUNT_HEADER_WORKS_OR_SERVICES_MATCHER.matches(value)
 
 
 def _is_org_header(value: object) -> bool:
     if not isinstance(value, str):
         return False
-    return match_anchor(value, "организац")
+    return _ORG_HEADER_MATCHER.matches(value)
 
 def _find_works_header(ws: Worksheet) -> WorksHeader | None:
     for row_idx, row in enumerate(ws.iter_rows(), start=1):
@@ -70,16 +80,12 @@ def _find_works_header(ws: Worksheet) -> WorksHeader | None:
     return None
 
 
-def _row_has_anchor(ws: Worksheet, *, row_idx: int, anchor: str) -> bool:
+def _row_has_anchor(ws: Worksheet, *, row_idx: int, anchor: BaseAnchor) -> bool:
     for col_idx in range(1, ws.max_column + 1):
         value = ws.cell(row=row_idx, column=col_idx).value
-        if isinstance(value, str) and match_anchor(value, anchor):
+        if isinstance(value, str) and anchor.matches(value):
             return True
     return False
-
-
-def _row_has_any_anchor(ws: Worksheet, *, row_idx: int, anchors: tuple[str, ...]) -> bool:
-    return any(_row_has_anchor(ws, row_idx=row_idx, anchor=anchor) for anchor in anchors)
 
 
 def _extract_amount_from_row(
@@ -109,7 +115,7 @@ def _extract_org_amount_rows_until_nmcd(
     nmcd_row_idx: int | None = None
 
     for row_idx in range(header.header_row_idx + 1, ws.max_row + 1):
-        if _row_has_anchor(ws, row_idx=row_idx, anchor=_IMCP_ANCHOR_NMCD_ROW):
+        if _row_has_anchor(ws, row_idx=row_idx, anchor=_NMCD_ROW_MATCHER):
             nmcd_row_idx = row_idx
             break
 
@@ -128,7 +134,7 @@ def _extract_org_amount_rows_until_nmcd(
             continue
 
 
-        if is_stop_row_by_anchor_match(name, _STOP_ROW_ANCHORS):
+        if _STOP_ROW_MATCHER.matches(name):
             break
 
         amount = amount_converter.convert(
@@ -160,17 +166,15 @@ def _extract_imcp_from_nmcd_block(
         return imcp_avg, imcp_limit
 
     for row_idx in range(nmcd_row_idx, ws.max_row + 1):
-        if imcp_avg is None and _row_has_anchor(
-            ws, row_idx=row_idx, anchor=_IMCP_ANCHOR_AVG
-        ):
+        if imcp_avg is None and _row_has_anchor(ws, row_idx=row_idx, anchor=_IMCP_AVG_ROW_MATCHER):
             imcp_avg = _extract_amount_from_row(
                 ws,
                 row_idx=row_idx,
                 amount_col_idx=amount_col_idx,
             )
 
-        if imcp_limit is None and _row_has_any_anchor(
-            ws, row_idx=row_idx, anchors=_IMCP_LIMIT_ROW_ANCHORS
+        if imcp_limit is None and _row_has_anchor(
+            ws, row_idx=row_idx, anchor=_IMCP_LIMIT_ROW_MATCHER
         ):
             imcp_limit = _extract_amount_from_row(
                 ws,
@@ -180,7 +184,7 @@ def _extract_imcp_from_nmcd_block(
 
         if imcp_avg is not None and imcp_limit is not None:
             break
-        if _row_has_anchor(ws, row_idx=row_idx, anchor="инструкц"):
+        if _row_has_anchor(ws, row_idx=row_idx, anchor=_INSTRUCTION_ROW_MATCHER):
             break
 
     return imcp_avg, imcp_limit
@@ -231,7 +235,10 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
     def _has_works_table_header(ws: Worksheet) -> bool:
         if _find_works_header(ws) is not None:
             return True
-        return find_anchor_row_idx(ws, _IMCP_ANCHOR_LIMIT) is not None
+        for row_idx in range(1, ws.max_row + 1):
+            if _row_has_anchor(ws, row_idx=row_idx, anchor=IMCP_ROW_MATCHER):
+                return True
+        return False
 
     def apply_to_result(self, target: IMCPResult, extracted: WorksSheetParseResult) -> None:
         target.works_imcp_avg = extracted.imcp_avg
