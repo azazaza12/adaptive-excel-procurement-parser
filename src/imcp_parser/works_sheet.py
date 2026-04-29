@@ -162,8 +162,3 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
             org_block_end_row_idx = row_idx
 
         return organizations, org_block_end_row_idx
-
-    def apply_to_result(self, target: IMCPResult, extracted: WorksSheetParseResult) -> None:
-        target.works_imcp_avg = extracted.imcp_avg
-        target.works_imcp_limit = extracted.imcp_limit
-        target.works_orgs_amounts = extracted.orgs_amounts
