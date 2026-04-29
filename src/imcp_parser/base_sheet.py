@@ -68,9 +68,5 @@ class BaseSheet(ABC, Generic[SheetResultT]):
             return True
         return False
 
-    @abstractmethod
-    def apply_to_result(self, target: IMCPResult, extracted: SheetResultT) -> None:
-        pass
-
     
 

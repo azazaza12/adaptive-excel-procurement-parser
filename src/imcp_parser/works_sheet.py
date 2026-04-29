@@ -63,7 +63,7 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
         index_header = self._find_header_by(_INDEX_HEADER_MATCHER)
         org_header = self._find_header_by(_ORG_HEADER_MATCHER)
         amount_header = self._find_header_by(_AMOUNT_HEADER_WORKS_OR_SERVICES_MATCHER)
-        if org_header and amount_header and index_header and org_header.row_idx == amount_header.row_idx:
+        if org_header and amount_header and index_header and org_header.row_idx == amount_header.row_idx == index_header.row_idx:
             header = WorksHeader(
                 row_idx=org_header.row_idx,
                 index_col_idx=index_header.col_idx,
