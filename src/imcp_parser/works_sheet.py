@@ -130,7 +130,6 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
             self, header: WorksHeader
     ) -> tuple[list[WorksOrgAmountResult], int | None]:
         organizations: list[WorksOrgAmountResult] = []
-        empty_rows_in_series = 0
         org_block_end_row_idx: int | None = None
 
         for row_idx in range(header.row_idx + 1, self.ws.max_row + 1):
@@ -142,7 +141,7 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
             ).value
             parsed_item_number = parse_number(raw_item_number)
             if parsed_item_number is None:
-                continue
+                break
 
             name = to_stripped_str(
                 self.ws.cell(row=row_idx, column=header.org_col_idx).value
@@ -150,10 +149,7 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
             amount = to_decimal(
                 self.ws.cell(row=row_idx, column=header.amount_col_idx).value
             )
-            if name is None or amount is None:
-                empty_rows_in_series += 1
-                if empty_rows_in_series >= _MAX_EMPTY_ROWS_IN_SERIES:
-                    break
+            if name is None or amount is None :
                 continue
 
             organizations.append(
@@ -163,7 +159,6 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
                     amount=amount,
                 )
             )
-            empty_rows_in_series = 0
             org_block_end_row_idx = row_idx
 
         return organizations, org_block_end_row_idx
