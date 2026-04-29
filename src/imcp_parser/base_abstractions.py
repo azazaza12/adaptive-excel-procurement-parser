@@ -4,10 +4,12 @@ from typing import Any, Callable, Generic, TypeVar
 
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.infrastructure.extraction.imcp.common import match_anchor, norm_text, to_decimal
+from app.infrastructure.extraction.imcp.common import norm_text, to_decimal
 
 ConvertedT = TypeVar("ConvertedT")
 RowT = TypeVar("RowT")
+
+_MIN_ANCHOR_WORD_LEN = 2
 
 
 class BaseAnchor(ABC):
@@ -23,7 +25,19 @@ class MatchAnchor(BaseAnchor):
     def matches(self, value: str) -> bool:
         if not isinstance(value, str):
             return False
-        return match_anchor(value, self._anchor)
+        cell_norm = norm_text(value)
+        anchor_words = [
+            word
+            for word in norm_text(self._anchor).split()
+            if len(word) >= _MIN_ANCHOR_WORD_LEN
+        ]
+        if not anchor_words:
+            return False
+        cell_words = cell_norm.split()
+        for anchor_word in anchor_words:
+            if not any(word.startswith(anchor_word) for word in cell_words):
+                return False
+        return True
 
 
 class ExactAnchor(BaseAnchor):
