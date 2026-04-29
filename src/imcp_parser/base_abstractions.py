@@ -22,7 +22,7 @@ class MatchAnchor(BaseAnchor):
     def __init__(self, anchor: str) -> None:
         self._anchor = anchor
 
-    def matches(self, value: str) -> bool:
+    def matches(self, value: Any) -> bool:
         if not isinstance(value, str):
             return False
         cell_norm = norm_text(value)
@@ -54,7 +54,9 @@ class AnyOfAnchors(BaseAnchor):
     def __init__(self, *anchors: BaseAnchor) -> None:
         self._anchors = anchors
 
-    def matches(self, value: str) -> bool:
+    def matches(self, value: Any) -> bool:
+        if not isinstance(value, str):
+            return False
         return any(anchor.matches(value) for anchor in self._anchors)
 
 

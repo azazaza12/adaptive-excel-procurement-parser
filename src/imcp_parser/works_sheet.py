@@ -24,18 +24,15 @@ _WORKS_SHEET_TITLE_ANCHORS = ("работ", "услуг")
 _MAX_EMPTY_ROWS_IN_SERIES = 3
 
 _ORG_HEADER_MATCHER = MatchAnchor("организац")
-_AMOUNT_HEADER_COST_MATCHER = MatchAnchor("стоимост")
 _AMOUNT_HEADER_WORKS_OR_SERVICES_MATCHER = AnyOfAnchors(
-    MatchAnchor("работ"),
-    MatchAnchor("услуг"),
+    MatchAnchor("стоимост работ"),
+    MatchAnchor("стоимост услуг"),
 )
 _IMCP_ROW_MATCHER = MatchAnchor("начальн максимальн цен договор")
 _IMCP_AVG_ROW_MATCHER = MatchAnchor("начальн максимальн цен договор средн арифметическ")
 _IMCP_LIMIT_ROW_MATCHER = MatchAnchor("лимит финансирован")
 _INSTRUCTION_ROW_MATCHER = MatchAnchor("инструкц")
 _STOP_ROW_MATCHER = AnyOfAnchors(_IMCP_ROW_MATCHER, _INSTRUCTION_ROW_MATCHER)
-
-
 
 
 @dataclass(slots=True)
@@ -45,20 +42,6 @@ class WorksHeader:
     amount_col_idx: int
 
 
-
-def _is_amount_header(value: object) -> bool:
-    if not isinstance(value, str):
-        return False
-    return _AMOUNT_HEADER_COST_MATCHER.matches(
-        value
-    ) and _AMOUNT_HEADER_WORKS_OR_SERVICES_MATCHER.matches(value)
-
-
-def _is_org_header(value: object) -> bool:
-    if not isinstance(value, str):
-        return False
-    return _ORG_HEADER_MATCHER.matches(value)
-
 def _find_works_header(ws: Worksheet) -> WorksHeader | None:
     for row_idx, row in enumerate(ws.iter_rows(), start=1):
         org_col_idx: int | None = None
@@ -66,9 +49,9 @@ def _find_works_header(ws: Worksheet) -> WorksHeader | None:
         for cell in row:
             value = cell.value
 
-            if org_col_idx is None and _is_org_header(value):
+            if org_col_idx is None and _ORG_HEADER_MATCHER.matches(value):
                 org_col_idx = cell.column
-            if amount_col_idx is None and _is_amount_header(value):
+            if amount_col_idx is None and _AMOUNT_HEADER_WORKS_OR_SERVICES_MATCHER.matches(value):
                 amount_col_idx = cell.column
         if org_col_idx is not None and amount_col_idx is not None:
             return WorksHeader(
