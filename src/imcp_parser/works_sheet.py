@@ -41,7 +41,7 @@ _STOP_ROW_MATCHER = AnyOfAnchors(_IMCP_ROW_MATCHER, _INSTRUCTION_ROW_MATCHER)
 
 @dataclass(slots=True)
 class WorksHeader:
-    header_row_idx: int
+    row_idx: int
     org_col_idx: int
     amount_col_idx: int
 
@@ -73,7 +73,7 @@ def _find_works_header(ws: Worksheet) -> WorksHeader | None:
                 amount_col_idx = cell.column
         if org_col_idx is not None and amount_col_idx is not None:
             return WorksHeader(
-                header_row_idx=row_idx,
+                row_idx=row_idx,
                 org_col_idx=org_col_idx,
                 amount_col_idx=amount_col_idx,
             )
@@ -114,7 +114,7 @@ def _extract_org_amount_rows_until_nmcd(
     empty_rows_in_series = 0
     nmcd_row_idx: int | None = None
 
-    for row_idx in range(header.header_row_idx + 1, ws.max_row + 1):
+    for row_idx in range(header.row_idx + 1, ws.max_row + 1):
         if _row_has_anchor(ws, row_idx=row_idx, anchor=_IMCP_ROW_MATCHER):
             nmcd_row_idx = row_idx
             break
