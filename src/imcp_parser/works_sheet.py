@@ -18,6 +18,7 @@ from app.infrastructure.extraction.imcp.common import (
 )
 from app.infrastructure.extraction.imcp.models import WorksSheetParseResult
 from app.infrastructure.extraction.imcp.common import to_decimal, to_stripped_str
+from enum import Enum
 
 
 _WORKS_SHEET_TITLE_ANCHORS = ("работ", "услуг")
@@ -190,7 +191,12 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
         return cls._has_works_table_header(ws)
 
     def extract(self) -> WorksSheetParseResult:
-        header = _find_works_header(self.ws)
+        header = None
+        org_header = self._find_header_by(_ORG_HEADER_MATCHER)
+        amount_header = self._find_header_by(_AMOUNT_HEADER_WORKS_OR_SERVICES_MATCHER)
+        if org_header and amount_header and org_header.row_idx == amount_header.row_idx:
+            header = WorksHeader(row_idx=org_header.row_idx, org_col_idx=org_header.col_idx, amount_col_idx=amount_header.col_idx)
+
         org_amount_rows: list[WorksOrgAmountResult] = []
         imcp_avg: Decimal | None = None
         imcp_limit: Decimal | None = None
@@ -205,18 +211,13 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
             orgs_amounts=orgs_amounts,
         )
 
-    @staticmethod
-    def _has_works_title(ws: Worksheet) -> bool:
-        title_norm = norm_text(ws.title)
+    def _has_works_title(self) -> bool:
+        title_norm = norm_text(self.ws.title)
         return all(anchor in title_norm for anchor in _WORKS_SHEET_TITLE_ANCHORS)
 
-    @staticmethod
-    def _has_works_table_header(ws: Worksheet) -> bool:
-        if _find_works_header(ws) is not None:
+    def _has_works_table_header(self) -> bool:
+        if self._find_header_by(_ORG_HEADER_MATCHER) is not None and self._find_header_by(_AMOUNT_HEADER_WORKS_OR_SERVICES_MATCHER) is not None:
             return True
-        for row_idx in range(1, ws.max_row + 1):
-            if _row_has_anchor(ws, row_idx=row_idx, anchor=_IMCP_ROW_MATCHER):
-                return True
         return False
 
     def apply_to_result(self, target: IMCPResult, extracted: WorksSheetParseResult) -> None:
