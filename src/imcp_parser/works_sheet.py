@@ -84,35 +84,6 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
             orgs_amounts=org_amount_rows,
         )
 
-    def extract_imcp_from_imcp_block(
-            self,
-            *,
-            imcp_start_row_idx: int | None,
-            amount_col_idx: int,
-    ) -> tuple[Decimal | None, Decimal | None]:
-        imcp_avg: Decimal | None = None
-        imcp_limit: Decimal | None = None
-        if imcp_start_row_idx is None:
-            return imcp_avg, imcp_limit
-
-        for row_idx in range(imcp_start_row_idx, self.ws.max_row + 1):
-            if imcp_avg is None and self.row_has_anchor(row_idx=row_idx, anchor=_IMCP_AVG_ROW_MATCHER):
-                imcp_avg = to_decimal(
-                    self.ws.cell(row=row_idx, column=amount_col_idx).value,
-                )
-
-            if imcp_limit is None and self.row_has_anchor(row_idx=row_idx, anchor=_IMCP_LIMIT_ROW_MATCHER):
-                imcp_limit = to_decimal(
-                    self.ws.cell(row=row_idx,
-                                 column=amount_col_idx).value
-                )
-
-            if imcp_avg is not None and imcp_limit is not None:
-                break
-            if self.row_has_anchor(row_idx=row_idx, anchor=_INSTRUCTION_ROW_MATCHER):
-                break
-
-        return imcp_avg, imcp_limit
 
     def extract_org_amount_rows_and_imcp(
             self, header: WorksHeader
@@ -162,3 +133,34 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
             org_block_end_row_idx = row_idx
 
         return organizations, org_block_end_row_idx
+
+
+    def extract_imcp_from_imcp_block(
+            self,
+            *,
+            imcp_start_row_idx: int | None,
+            amount_col_idx: int,
+    ) -> tuple[Decimal | None, Decimal | None]:
+        imcp_avg: Decimal | None = None
+        imcp_limit: Decimal | None = None
+        if imcp_start_row_idx is None:
+            return imcp_avg, imcp_limit
+
+        for row_idx in range(imcp_start_row_idx, self.ws.max_row + 1):
+            if imcp_avg is None and self.row_has_anchor(row_idx=row_idx, anchor=_IMCP_AVG_ROW_MATCHER):
+                imcp_avg = to_decimal(
+                    self.ws.cell(row=row_idx, column=amount_col_idx).value,
+                )
+
+            if imcp_limit is None and self.row_has_anchor(row_idx=row_idx, anchor=_IMCP_LIMIT_ROW_MATCHER):
+                imcp_limit = to_decimal(
+                    self.ws.cell(row=row_idx,
+                                 column=amount_col_idx).value
+                )
+
+            if imcp_avg is not None and imcp_limit is not None:
+                break
+            if self.row_has_anchor(row_idx=row_idx, anchor=_INSTRUCTION_ROW_MATCHER):
+                break
+
+        return imcp_avg, imcp_limit
