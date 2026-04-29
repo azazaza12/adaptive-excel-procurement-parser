@@ -13,6 +13,7 @@ from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
 from app.infrastructure.extraction.imcp.common import (
     to_decimal,
     to_stripped_str,
+    parse_number
 )
 from app.infrastructure.extraction.imcp.models import WorksSheetParseResult
 
@@ -46,7 +47,6 @@ class WorksHeader:
     amount_col_idx: int
 
 
-
 class WorksSheet(BaseSheet[WorksSheetParseResult]):
 
     @classmethod
@@ -63,10 +63,10 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
         index_header = self._find_header_by(_INDEX_HEADER_MATCHER)
         org_header = self._find_header_by(_ORG_HEADER_MATCHER)
         amount_header = self._find_header_by(_AMOUNT_HEADER_WORKS_OR_SERVICES_MATCHER)
-        if org_header and amount_header and org_header.row_idx == amount_header.row_idx:
+        if org_header and amount_header and index_header and org_header.row_idx == amount_header.row_idx:
             header = WorksHeader(
                 row_idx=org_header.row_idx,
-                index_col_idx=index_header.col_idx if index_header else None,
+                index_col_idx=index_header.col_idx,
                 org_col_idx=org_header.col_idx,
                 amount_col_idx=amount_header.col_idx,
             )
@@ -78,25 +78,24 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
             org_amount_rows, imcp_avg, imcp_limit = self.extract_org_amount_rows_and_imcp(
                 header
             )
-        orgs_amounts = org_amount_rows or None
         return WorksSheetParseResult(
             imcp_avg=imcp_avg,
             imcp_limit=imcp_limit,
-            orgs_amounts=orgs_amounts,
+            orgs_amounts=org_amount_rows,
         )
 
     def extract_imcp_from_imcp_block(
-           self,
+            self,
             *,
-            imcp_row_idx: int | None,
+            imcp_start_row_idx: int | None,
             amount_col_idx: int,
     ) -> tuple[Decimal | None, Decimal | None]:
         imcp_avg: Decimal | None = None
         imcp_limit: Decimal | None = None
-        if imcp_row_idx is None:
+        if imcp_start_row_idx is None:
             return imcp_avg, imcp_limit
 
-        for row_idx in range(imcp_row_idx, self.ws.max_row + 1):
+        for row_idx in range(imcp_start_row_idx, self.ws.max_row + 1):
             if imcp_avg is None and self.row_has_anchor(row_idx=row_idx, anchor=_IMCP_AVG_ROW_MATCHER):
                 imcp_avg = to_decimal(
                     self.ws.cell(row=row_idx, column=amount_col_idx).value,
@@ -105,7 +104,7 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
             if imcp_limit is None and self.row_has_anchor(row_idx=row_idx, anchor=_IMCP_LIMIT_ROW_MATCHER):
                 imcp_limit = to_decimal(
                     self.ws.cell(row=row_idx,
-                            column=amount_col_idx).value
+                                 column=amount_col_idx).value
                 )
 
             if imcp_avg is not None and imcp_limit is not None:
@@ -115,22 +114,17 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
 
         return imcp_avg, imcp_limit
 
-
     def extract_org_amount_rows_and_imcp(
             self, header: WorksHeader
     ) -> tuple[list[WorksOrgAmountResult], Decimal | None, Decimal | None]:
         organizations, org_block_end_row_idx = self.extract_org_amount_rows_until_imcp(
             header
         )
-        imcp_start_row_idx = (
-            org_block_end_row_idx + 1 if org_block_end_row_idx is not None else None
-        )
         imcp_avg, imcp_limit = self.extract_imcp_from_imcp_block(
-            imcp_row_idx=imcp_start_row_idx,
+            imcp_start_row_idx=org_block_end_row_idx + 1 if org_block_end_row_idx is not None else None,
             amount_col_idx=header.amount_col_idx,
         )
         return organizations, imcp_avg, imcp_limit
-
 
     def extract_org_amount_rows_until_imcp(
             self, header: WorksHeader
@@ -138,38 +132,28 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
         organizations: list[WorksOrgAmountResult] = []
         empty_rows_in_series = 0
         org_block_end_row_idx: int | None = None
-        expected_row_number = 1
 
         for row_idx in range(header.row_idx + 1, self.ws.max_row + 1):
-            if header.index_col_idx is not None:
-                raw_row_number = self.ws.cell(
-                    row=row_idx,
-                    column=header.index_col_idx,
-                ).value
-                parsed_row_number = _parse_row_number(raw_row_number)
-                if parsed_row_number is None or parsed_row_number != expected_row_number:
-                    break
-                expected_row_number += 1
-            else:
-                if self.row_has_anchor(row_idx=row_idx, anchor=_IMCP_ROW_MATCHER):
-                    break
+            if header.index_col_idx is None:
+                break
+            raw_item_number = self.ws.cell(
+                row=row_idx,
+                column=header.index_col_idx,
+            ).value
+            parsed_item_number = parse_number(raw_item_number)
+            if parsed_item_number is None:
+                continue
 
             name = to_stripped_str(
                 self.ws.cell(row=row_idx, column=header.org_col_idx).value
             )
-            if name is None:
-                empty_rows_in_series += 1
-                if empty_rows_in_series >= _MAX_EMPTY_ROWS_IN_SERIES:
-                    break
-                continue
-
-            if _STOP_ROW_MATCHER.matches(name):
-                break
-
             amount = to_decimal(
                 self.ws.cell(row=row_idx, column=header.amount_col_idx).value
             )
-            if amount is None:
+            if name is None or amount is None:
+                empty_rows_in_series += 1
+                if empty_rows_in_series >= _MAX_EMPTY_ROWS_IN_SERIES:
+                    break
                 continue
 
             organizations.append(
@@ -179,6 +163,7 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
                     amount=amount,
                 )
             )
+            empty_rows_in_series = 0
             org_block_end_row_idx = row_idx
 
         return organizations, org_block_end_row_idx
@@ -187,19 +172,3 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
         target.works_imcp_avg = extracted.imcp_avg
         target.works_imcp_limit = extracted.imcp_limit
         target.works_orgs_amounts = extracted.orgs_amounts
-
-
-def _parse_row_number(value: object) -> int | None:
-    if isinstance(value, int):
-        return value if value > 0 else None
-    if isinstance(value, float):
-        int_value = int(value)
-        if value == int_value and int_value > 0:
-            return int_value
-        return None
-    if isinstance(value, str):
-        stripped = value.strip().replace(".", "")
-        if stripped.isdigit():
-            parsed = int(stripped)
-            return parsed if parsed > 0 else None
-    return None

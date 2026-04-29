@@ -19,6 +19,22 @@ def norm_text(value: str) -> str:
     return " ".join(normalized.split())
 
 
+def parse_number(value: object) -> int | None:
+    if isinstance(value, int):
+        return value if value > 0 else None
+    if isinstance(value, float):
+        int_value = int(value)
+        if value == int_value and int_value > 0:
+            return int_value
+        return None
+    if isinstance(value, str):
+        stripped = value.strip().replace(".", "")
+        if stripped.isdigit():
+            parsed = int(stripped)
+            return parsed if parsed > 0 else None
+    return None
+
+
 def match_anchor(cell_value: str, anchor: str) -> bool:
     if not isinstance(cell_value, str):
         return False
