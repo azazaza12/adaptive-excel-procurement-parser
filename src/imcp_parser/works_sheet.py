@@ -8,9 +8,7 @@ from app.domain.entities.imcp.works_result import WorksOrgAmountResult
 from app.infrastructure.extraction.imcp.base_abstractions import (
     AnyOfAnchors,
     BaseAnchor,
-    DecimalConverter,
     MatchAnchor,
-    StringConverter,
 )
 from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
 from app.infrastructure.extraction.imcp.common import (
@@ -19,6 +17,7 @@ from app.infrastructure.extraction.imcp.common import (
     norm_text,
 )
 from app.infrastructure.extraction.imcp.models import WorksSheetParseResult
+from app.infrastructure.extraction.imcp.common import to_decimal, to_stripped_str
 
 
 _WORKS_SHEET_TITLE_ANCHORS = ("работ", "услуг")
@@ -91,15 +90,14 @@ def _row_has_anchor(ws: Worksheet, *, row_idx: int, anchor: BaseAnchor) -> bool:
 def _extract_amount_from_row(
     ws: Worksheet, *, row_idx: int, amount_col_idx: int
 ) -> Decimal | None:
-    amount_converter = DecimalConverter()
-    amount_from_header_column = amount_converter.convert(
+    amount_from_header_column = to_decimal(
         ws.cell(row=row_idx, column=amount_col_idx).value
     )
     if amount_from_header_column is not None:
         return amount_from_header_column
 
     for col_idx in range(ws.max_column, 0, -1):
-        amount = amount_converter.convert(ws.cell(row=row_idx, column=col_idx).value)
+        amount = to_decimal(ws.cell(row=row_idx, column=col_idx).value)
         if amount is not None:
             return amount
     return None
@@ -109,8 +107,6 @@ def _extract_org_amount_rows_until_imcp(
     ws: Worksheet, header: WorksHeader
 ) -> tuple[list[WorksOrgAmountResult], int | None]:
     organizations: list[WorksOrgAmountResult] = []
-    name_converter = StringConverter()
-    amount_converter = DecimalConverter()
     empty_rows_in_series = 0
     imcp_row_idx: int | None = None
 
@@ -119,7 +115,7 @@ def _extract_org_amount_rows_until_imcp(
             imcp_row_idx = row_idx
             break
 
-        name = name_converter.convert(
+        name = to_stripped_str(
             ws.cell(row=row_idx, column=header.org_col_idx).value
         )
         is_empty_name = name is None
@@ -137,7 +133,7 @@ def _extract_org_amount_rows_until_imcp(
         if _STOP_ROW_MATCHER.matches(name):
             break
 
-        amount = amount_converter.convert(
+        amount = to_decimal(
             ws.cell(row=row_idx, column=header.amount_col_idx).value
         )
         if amount is None:

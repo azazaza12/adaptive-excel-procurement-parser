@@ -128,6 +128,12 @@ def to_decimal(value: Any) -> Decimal | None:
     return result
 
 
+def to_stripped_str(value: Any):
+    if not isinstance(value, str):
+        return None
+    stripped = value.strip()
+    return stripped or None
+
 def find_anchor_row_idx(ws: Worksheet, anchor: str) -> int | None:
     for row in ws.iter_rows():
         for cell in row:

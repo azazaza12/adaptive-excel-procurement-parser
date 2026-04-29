@@ -6,13 +6,10 @@ from app.infrastructure.extraction.imcp.base_abstractions import (
     AnyOfAnchors,
     BaseAnchor,
     BaseColumn,
-    BaseConverter,
     BaseList,
-    DecimalConverter,
     ExactAnchor,
     IdentityConverter,
     MatchAnchor,
-    StringConverter,
 )
 from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
 from app.infrastructure.extraction.imcp.extractor_registry import (
@@ -32,10 +29,8 @@ __all__ = [
     "AnyOfAnchors",
     "BaseAnchor",
     "BaseColumn",
-    "BaseConverter",
     "BaseSheet",
     "BaseList",
-    "DecimalConverter",
     "DynamicRowData",
     "DynamicTableExtractor",
     "ExactAnchor",
@@ -44,7 +39,6 @@ __all__ = [
     "SheetExtractorRegistry",
     "SheetFactory",
     "SheetType",
-    "StringConverter",
     "extract_goods_sheet",
     "extract_works_sheet",
 ]
