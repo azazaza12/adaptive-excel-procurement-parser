@@ -58,7 +58,7 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
             (_ORG_HEADER_MATCHER, _AMOUNT_HEADER_WORKS_OR_SERVICES_MATCHER)
         )
 
-    def extract(self) -> WorksSheetParseResult:
+    def extract(self) -> WorksSheetParseResult | None:
         header = None
         index_header = self._find_header_by(_INDEX_HEADER_MATCHER)
         org_header = self._find_header_by(_ORG_HEADER_MATCHER)
@@ -70,36 +70,24 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
                 org_col_idx=org_header.col_idx,
                 amount_col_idx=amount_header.col_idx,
             )
-
-        org_amount_rows: list[WorksOrgAmountResult] = []
-        imcp_avg: Decimal | None = None
-        imcp_limit: Decimal | None = None
-        if header is not None:
-            org_amount_rows, imcp_avg, imcp_limit = self.extract_org_amount_rows_and_imcp(
-                header
-            )
-        return WorksSheetParseResult(
-            imcp_avg=imcp_avg,
-            imcp_limit=imcp_limit,
-            orgs_amounts=org_amount_rows,
-        )
-
-
-    def extract_org_amount_rows_and_imcp(
-            self, header: WorksHeader
-    ) -> tuple[list[WorksOrgAmountResult], Decimal | None, Decimal | None]:
-        organizations, org_block_end_row_idx = self.extract_org_amount_rows_until_imcp(
+        if header is None:
+            return None
+        org_amount_rows, org_block_end_row_idx = self.extract_org_amount_rows_until_imcp(
             header
         )
         imcp_avg, imcp_limit = self.extract_imcp_from_imcp_block(
             imcp_start_row_idx=org_block_end_row_idx + 1 if org_block_end_row_idx is not None else None,
             amount_col_idx=header.amount_col_idx,
         )
-        return organizations, imcp_avg, imcp_limit
+        return WorksSheetParseResult(
+            imcp_avg=imcp_avg,
+            imcp_limit=imcp_limit,
+            orgs_amounts=org_amount_rows,
+        )
 
     def extract_org_amount_rows_until_imcp(
             self, header: WorksHeader
-    ) -> tuple[list[WorksOrgAmountResult], int | None]:
+    ) -> tuple[list[WorksOrgAmountResult] | None, int | None]:
         organizations: list[WorksOrgAmountResult] = []
         org_block_end_row_idx: int | None = None
 
@@ -120,7 +108,7 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
             amount = to_decimal(
                 self.ws.cell(row=row_idx, column=header.amount_col_idx).value
             )
-            if name is None or amount is None :
+            if name is None or amount is None:
                 continue
 
             organizations.append(
@@ -131,7 +119,7 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
                 )
             )
             org_block_end_row_idx = row_idx
-
+        organizations = organizations if organizations else None
         return organizations, org_block_end_row_idx
 
 
