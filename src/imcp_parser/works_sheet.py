@@ -105,18 +105,18 @@ def _extract_amount_from_row(
     return None
 
 
-def _extract_org_amount_rows_until_nmcd(
+def _extract_org_amount_rows_until_imcp(
     ws: Worksheet, header: WorksHeader
 ) -> tuple[list[WorksOrgAmountResult], int | None]:
     organizations: list[WorksOrgAmountResult] = []
     name_converter = StringConverter()
     amount_converter = DecimalConverter()
     empty_rows_in_series = 0
-    nmcd_row_idx: int | None = None
+    imcp_row_idx: int | None = None
 
     for row_idx in range(header.row_idx + 1, ws.max_row + 1):
         if _row_has_anchor(ws, row_idx=row_idx, anchor=_IMCP_ROW_MATCHER):
-            nmcd_row_idx = row_idx
+            imcp_row_idx = row_idx
             break
 
         name = name_converter.convert(
@@ -151,21 +151,21 @@ def _extract_org_amount_rows_until_nmcd(
             )
         )
 
-    return organizations, nmcd_row_idx
+    return organizations, imcp_row_idx
 
 
-def _extract_imcp_from_nmcd_block(
+def _extract_imcp_from_imcp_block(
     ws: Worksheet,
     *,
-    nmcd_row_idx: int | None,
+    imcp_row_idx: int | None,
     amount_col_idx: int,
 ) -> tuple[Decimal | None, Decimal | None]:
     imcp_avg: Decimal | None = None
     imcp_limit: Decimal | None = None
-    if nmcd_row_idx is None:
+    if imcp_row_idx is None:
         return imcp_avg, imcp_limit
 
-    for row_idx in range(nmcd_row_idx, ws.max_row + 1):
+    for row_idx in range(imcp_row_idx, ws.max_row + 1):
         if imcp_avg is None and _row_has_anchor(ws, row_idx=row_idx, anchor=_IMCP_AVG_ROW_MATCHER):
             imcp_avg = _extract_amount_from_row(
                 ws,
@@ -193,10 +193,10 @@ def _extract_imcp_from_nmcd_block(
 def _extract_org_amount_rows_and_imcp(
     ws: Worksheet, header: WorksHeader
 ) -> tuple[list[WorksOrgAmountResult], Decimal | None, Decimal | None]:
-    organizations, nmcd_row_idx = _extract_org_amount_rows_until_nmcd(ws, header)
-    imcp_avg, imcp_limit = _extract_imcp_from_nmcd_block(
+    organizations, nmcd_row_idx = _extract_org_amount_rows_until_imcp(ws, header)
+    imcp_avg, imcp_limit = _extract_imcp_from_imcp_block(
         ws,
-        nmcd_row_idx=nmcd_row_idx,
+        imcp_row_idx=nmcd_row_idx,
         amount_col_idx=header.amount_col_idx,
     )
     return organizations, imcp_avg, imcp_limit
