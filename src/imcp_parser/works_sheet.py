@@ -30,11 +30,11 @@ _AMOUNT_HEADER_WORKS_OR_SERVICES_MATCHER = AnyOfAnchors(
     MatchAnchor("работ"),
     MatchAnchor("услуг"),
 )
-_NMCD_ROW_MATCHER = MatchAnchor("начальн максимальн цен договор")
+_IMCP_ROW_MATCHER = MatchAnchor("начальн максимальн цен договор")
 _IMCP_AVG_ROW_MATCHER = MatchAnchor("начальн максимальн цен договор средн арифметическ")
 _IMCP_LIMIT_ROW_MATCHER = MatchAnchor("лимит финансирован")
 _INSTRUCTION_ROW_MATCHER = MatchAnchor("инструкц")
-_STOP_ROW_MATCHER = AnyOfAnchors(_NMCD_ROW_MATCHER, _INSTRUCTION_ROW_MATCHER)
+_STOP_ROW_MATCHER = AnyOfAnchors(_IMCP_ROW_MATCHER, _INSTRUCTION_ROW_MATCHER)
 
 
 
@@ -115,7 +115,7 @@ def _extract_org_amount_rows_until_nmcd(
     nmcd_row_idx: int | None = None
 
     for row_idx in range(header.header_row_idx + 1, ws.max_row + 1):
-        if _row_has_anchor(ws, row_idx=row_idx, anchor=_NMCD_ROW_MATCHER):
+        if _row_has_anchor(ws, row_idx=row_idx, anchor=_IMCP_ROW_MATCHER):
             nmcd_row_idx = row_idx
             break
 
@@ -236,7 +236,7 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
         if _find_works_header(ws) is not None:
             return True
         for row_idx in range(1, ws.max_row + 1):
-            if _row_has_anchor(ws, row_idx=row_idx, anchor=IMCP_ROW_MATCHER):
+            if _row_has_anchor(ws, row_idx=row_idx, anchor=_IMCP_ROW_MATCHER):
                 return True
         return False
 
