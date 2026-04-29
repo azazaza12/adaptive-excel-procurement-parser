@@ -43,6 +43,12 @@ class BaseSheet(ABC, Generic[SheetResultT]):
     def extract(self) -> SheetResultT:
         pass
 
+    def row_has_anchor(self, *, row_idx: int, anchor: BaseAnchor) -> bool:
+        for col_idx in range(1, self.ws.max_column + 1):
+            value = self.ws.cell(row=row_idx, column=col_idx).value
+            if anchor.matches(value):
+                return True
+        return False
 
     def _find_header_by(self, anchor: BaseAnchor) -> HeaderCell | None:
         for row_idx, row in enumerate(self.ws.iter_rows(), start=1):
@@ -51,6 +57,16 @@ class BaseSheet(ABC, Generic[SheetResultT]):
                 if anchor.matches(value):
                     return HeaderCell(row_idx=row_idx, col_idx=cell.column)
         return None
+
+    def _has_title_anchors(self, title_anchors: tuple[BaseAnchor, ...]) -> bool:
+        return all(anchor.matches(self.ws.title) for anchor in title_anchors)
+
+
+    def _has_table_header(self, anchors: tuple[BaseAnchor, ...]) -> bool:
+        headers = [self._find_header_by(anchor) for anchor in anchors]
+        if all(header is not None for header in headers):
+            return True
+        return False
 
     @abstractmethod
     def apply_to_result(self, target: IMCPResult, extracted: SheetResultT) -> None:
