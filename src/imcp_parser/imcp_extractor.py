@@ -10,6 +10,7 @@ from app.domain.exceptions import (
 )
 from app.domain.service.excel_imcp_extractor import IExcelIMCPExtractor
 from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
+from app.infrastructure.extraction.imcp.result_updater import update_result
 
 
 def _build_sheet(ws: Worksheet) -> BaseSheet | None:
@@ -25,14 +26,17 @@ class OpenpyxlExcelIMCPExtractor(IExcelIMCPExtractor):
 
         try:
             result = IMCPResult()
+            has_supported_data = False
             for sheet_name in wb.sheetnames:
                 ws = wb[sheet_name]
                 sheet = _build_sheet(ws)
                 if sheet is None:
                     continue
                 parsed = sheet.extract()
-                sheet.apply_to_result(result, parsed)
-            if result is None:
+                if parsed is not None:
+                    update_result(parsed, result)
+                    has_supported_data = True
+            if not has_supported_data:
                 raise IMCPNotFoundError()
             return result
         finally:
