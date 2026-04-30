@@ -50,10 +50,13 @@ def test_works_sheet_extract_keeps_order_amounts_and_imcp_values() -> None:
     ws["A1"] = "№ п/п"
     ws["B1"] = "Организации"
     ws["C1"] = "Стоимость выполнения работ / оказания услуг, в т.ч. НДС 20 %, руб."
+    ws["A2"] = "1"
     ws["B2"] = "ООО Гамма Сервис"
     ws["C2"] = "13 594 116,00"
+    ws["A3"] = "2"
     ws["B3"] = "ООО ДЕЛЬТАСТРОЙ"
     ws["C3"] = "12 000 000,00"
+    ws["A4"] = "3"
     ws["B4"] = "ИП Иванов И.И."
     ws["C4"] = "11 400 000,00"
     ws["B5"] = _ANCHOR_AVG
@@ -66,13 +69,13 @@ def test_works_sheet_extract_keeps_order_amounts_and_imcp_values() -> None:
     assert result.imcp_avg == Decimal("13000000.00")
     assert result.imcp_limit == Decimal("12000000.00")
     assert result.orgs_amounts is not None
-    assert [org.name for org in result.orgs_amounts.organizations] == [
+    assert [org.name for org in result.orgs_amounts] == [
         "ООО Гамма Сервис",
         "ООО ДЕЛЬТАСТРОЙ",
         "ИП Иванов И.И.",
     ]
-    assert [org.id for org in result.orgs_amounts.organizations] == [1, 2, 3]
-    assert [org.amount for org in result.orgs_amounts.organizations] == [
+    assert [org.id for org in result.orgs_amounts] == [1, 2, 3]
+    assert [org.amount for org in result.orgs_amounts] == [
         Decimal("13594116.00"),
         Decimal("12000000.00"),
         Decimal("11400000.00"),
