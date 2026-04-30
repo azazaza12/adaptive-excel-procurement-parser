@@ -8,8 +8,8 @@ from app.infrastructure.extraction.imcp.base_abstractions import BaseAnchor
 
 SheetResultT = TypeVar("SheetResultT")
 
-@dataclass
-class HeaderCell(slots=True):
+@dataclass(slots=True)
+class HeaderCell:
     row_idx: int
     col_idx: int
 
