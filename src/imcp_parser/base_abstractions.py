@@ -9,7 +9,7 @@ from app.infrastructure.extraction.imcp.common import norm_text, to_decimal
 ConvertedT = TypeVar("ConvertedT")
 RowT = TypeVar("RowT")
 
-_MIN_ANCHOR_WORD_LEN = 2
+_MIN_ANCHOR_WORD_LEN = 1
 
 
 class BaseAnchor(ABC):
