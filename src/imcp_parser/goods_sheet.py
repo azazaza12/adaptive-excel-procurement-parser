@@ -85,11 +85,11 @@ class GoodsSheet(BaseSheet):
             end_col_idx=price_block_end_col_idx,
         )
 
-        sources, col_idx_to_source_id = self.map_sources(parsed_sources)
+        sources, col_idx_to_source_id = self._map_sources(parsed_sources)
         goods_items, prices, block_end_row_idx = self.extract_goods_items_until_imcp(
             header, parsed_sources, col_idx_to_source_id
         )
-        if prices is None or sources is None or goods_items is None:
+        if prices is None or goods_items is None:
             return None
         imcp_avg = self.extract_imcp_from_imcp_block(block_end_row_idx=block_end_row_idx, item_imcp_col_idx=header.item_imcp_col_idx)
         result = GoodsSheetParseResult(goods_data=GoodsData(sources=sources, goods_items=goods_items, prices=prices), imcp_avg=imcp_avg)
@@ -115,7 +115,7 @@ class GoodsSheet(BaseSheet):
         return sources
 
 
-    def map_sources(self, parsed_sources: list[ParsedSource]) -> tuple[list[Source], dict[int, int]]:
+    def _map_sources(self, parsed_sources: list[ParsedSource]) -> tuple[list[Source], dict[int, int]]:
         sources:list[Source] = []
         col_idx_to_source_id: dict[int, int] = {}
         for i, parsed in enumerate(parsed_sources, start=1):
