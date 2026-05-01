@@ -70,7 +70,7 @@ class GoodsSheet(BaseSheet):
                                  index_col_idx=index_header.col_idx, item_name_col_idx=item_name_header.col_idx,
                                  price_block_start_col_idx=price_block_header.col_idx,
                                  unit_imcp_col_idx=unit_imcp_header.col_idx,
-                                 unit_of_measure_col_idx=unit_of_measure_anchor.col_idx,
+                                 unit_of_measure_col_idx=unit_of_measure_anchor.col_idx if unit_of_measure_anchor else None,
                                  quantity_col_idx=quantity_header.col_idx, item_imcp_col_idx=item_imcp_header.col_idx,
                                  item_imcp_avg_col_idx=item_imcp_avg_header.col_idx)
 
@@ -92,7 +92,7 @@ class GoodsSheet(BaseSheet):
         prices = self.extract_prices(header, parsed_sources, col_idx_to_source_id)
         if prices is None or sources is None or goods_items is None:
             return None
-        imcp_avg = self.extract_imcp_from_imcp_block(imcp_start_row_idx=block_end_row_idx + 1, item_imcp_col_idx=header.item_imcp_col_idx)
+        imcp_avg = self.extract_imcp_from_imcp_block(block_end_row_idx=block_end_row_idx, item_imcp_col_idx=header.item_imcp_col_idx)
         result = GoodsSheetParseResult(goods_data=GoodsData(sources=sources, goods_items=goods_items, prices=prices), imcp_avg=imcp_avg)
         return result
 
@@ -137,6 +137,8 @@ class GoodsSheet(BaseSheet):
                 break
             for parsed_source in parsed_sources:
                 price = to_decimal(self.ws.cell(row=row_idx, column=parsed_source.col_idx).value)
+                if price is None:
+                    continue
                 prices.append(PriceCell(source_id=col_idx_to_source_id[parsed_source.col_idx], item_id=parsed_item_number, price=price))
         prices = prices if prices else None
         return prices
@@ -166,11 +168,11 @@ class GoodsSheet(BaseSheet):
         return goods_items, block_end_row_idx
 
 
-    def extract_imcp_from_imcp_block(self, *, imcp_start_row_idx: int | None, item_imcp_col_idx: int) -> Decimal | None:
+    def extract_imcp_from_imcp_block(self, *, block_end_row_idx: int | None, item_imcp_col_idx: int) -> Decimal | None:
         imcp_avg = None
-        if imcp_start_row_idx is None:
+        if block_end_row_idx is None:
             return imcp_avg
-        for row_idx in range(imcp_start_row_idx, self.ws.max_row + 1):
+        for row_idx in range(block_end_row_idx + 1, self.ws.max_row + 1):
             if self.row_has_anchor(row_idx=row_idx, anchor=_IMCP_ANCHOR_AVG):
                 imcp_avg = to_decimal(self.ws.cell(row=row_idx, column=item_imcp_col_idx).value)
             if imcp_avg is not None:
