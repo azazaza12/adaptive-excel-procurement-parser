@@ -38,15 +38,11 @@ class NotContainsAnchor(BaseAnchor):
     def __init__(self, anchor: str) -> None:
         self._anchor = anchor
 
-
     def matches(self, value: Any) -> bool:
         if not isinstance(value, str):
             return True
         cell_norm = norm_text(value)
-        anchor_words = [
-            word
-            for word in norm_text(self._anchor).split()
-        ]
+        anchor_words = [word for word in norm_text(self._anchor).split()]
         if not anchor_words:
             return True
         cell_words = cell_norm.split()
@@ -54,6 +50,7 @@ class NotContainsAnchor(BaseAnchor):
             if not any(word.startswith(anchor_word) for word in cell_words):
                 return True
         return False
+
 
 class ExactAnchor(BaseAnchor):
     def __init__(self, anchor: str) -> None:

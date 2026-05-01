@@ -1,13 +1,17 @@
 from functools import singledispatch
 from app.domain.entities.imcp.result import IMCPResult
-from app.infrastructure.extraction.imcp.models import WorksSheetParseResult, GoodsSheetParseResult
+from app.infrastructure.extraction.imcp.models import (
+    WorksSheetParseResult,
+    GoodsSheetParseResult,
+)
 from app.domain.exceptions import UnsupportedSheetResultError
+
 
 @singledispatch
 def update_result(parsed: object, result: IMCPResult) -> None:
     raise UnsupportedSheetResultError(
-    f"Unsupported parsed result type: {type(parsed).__module__}.{type(parsed).__qualname__}"
-)
+        f"Unsupported parsed result type: {type(parsed).__module__}.{type(parsed).__qualname__}"
+    )
 
 
 @update_result.register(WorksSheetParseResult)
@@ -21,4 +25,3 @@ def _(parsed: WorksSheetParseResult, result: IMCPResult) -> None:
 def _(parsed: GoodsSheetParseResult, result: IMCPResult) -> None:
     result.goods_data = parsed.goods_data
     result.goods_imcp_avg = parsed.imcp_avg
-

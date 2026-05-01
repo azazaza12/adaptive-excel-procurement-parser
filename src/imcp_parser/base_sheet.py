@@ -8,6 +8,7 @@ from app.infrastructure.extraction.imcp.base_abstractions import BaseAnchor
 
 SheetResultT = TypeVar("SheetResultT")
 
+
 @dataclass(slots=True)
 class HeaderCell:
     row_idx: int
@@ -17,11 +18,9 @@ class HeaderCell:
 class BaseSheet(ABC, Generic[SheetResultT]):
     _registry: ClassVar[list[type["BaseSheet"]]] = []
 
-
     def __init__(self, ws: Worksheet) -> None:
         self.ws = ws
 
-    
     def __init_subclass__(cls, **kwargs) -> None:
         super().__init_subclass__(**kwargs)
 
@@ -29,7 +28,6 @@ class BaseSheet(ABC, Generic[SheetResultT]):
             return
         BaseSheet._registry.append(cls)
 
-    
     @classmethod
     def registered(cls) -> tuple[type["BaseSheet"], ...]:
         return tuple(BaseSheet._registry)
@@ -61,12 +59,8 @@ class BaseSheet(ABC, Generic[SheetResultT]):
     def _has_title_anchors(self, title_anchors: tuple[BaseAnchor, ...]) -> bool:
         return all(anchor.matches(self.ws.title) for anchor in title_anchors)
 
-
     def _has_table_header(self, anchors: tuple[BaseAnchor, ...]) -> bool:
         headers = [self._find_header_by(anchor) for anchor in anchors]
         if all(header is not None for header in headers):
             return True
         return False
-
-    
-
