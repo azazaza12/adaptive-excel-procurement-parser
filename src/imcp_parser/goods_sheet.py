@@ -4,7 +4,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from app.infrastructure.extraction.imcp.models import GoodsSheetParseResult
 from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
-from app.infrastructure.extraction.imcp.base_abstractions import MatchAnchor, AnyOfAnchors
+from app.infrastructure.extraction.imcp.base_abstractions import MatchAnchor, AnyOfAnchors, NotContainsAnchor, AllOfAnchors
 from app.domain.entities.imcp.goods_result import GoodsItem, PriceCell, Source, GoodsData
 from app.infrastructure.extraction.imcp.common import parse_number, to_decimal, to_stripped_str
 
@@ -17,7 +17,7 @@ _TITLE_ANCHORS = (
 )
 _ITEM_NAME_HEADER_MATHER = MatchAnchor("наименова товар")
 _GOODS_PRICE_BLOCK_PARENT_ANCHORS = MatchAnchor("цена единицы товара", )
-_ITEM_IMCP_ANCHORS = MatchAnchor("нмц товар")
+_ITEM_IMCP_ANCHORS = AllOfAnchors(AnyOfAnchors(MatchAnchor("нмц товар"), MatchAnchor("нмц средн арифм")), NotContainsAnchor("един"))
 _UNIT_IMCP_ANCHORS = MatchAnchor("нмц единиц", )
 _UNIT_OF_MEASURE_ANCHORS = MatchAnchor("ед изм", )
 _QUANTITY_ANCHORS = AnyOfAnchors(MatchAnchor("кол"), MatchAnchor("всего"))
