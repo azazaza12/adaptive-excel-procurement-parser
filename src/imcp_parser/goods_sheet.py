@@ -37,7 +37,13 @@ class GoodsHeader:
     item_imcp_avg_col_idx: int
 
 
+@dataclass(slots=True)
+class SourceHeader:
+    col_idx: int
+    name: str
 
+
+#TODO поиск границ блока цен и извлечение заголовков
 class GoodsSheet(BaseSheet):
 
     @classmethod
@@ -58,7 +64,33 @@ class GoodsSheet(BaseSheet):
         item_imcp_header = self._find_header_by(_ITEM_IMCP_ANCHORS)
         item_imcp_avg_header = self._find_header_by(_IMCP_ANCHOR_AVG)
 
+        if index_header and item_name_header and price_block_header and unit_imcp_header and quantity_header and item_imcp_header and item_imcp_avg_header:
+            price_block_end_col_idx = unit_imcp_header.col_idx - 1
+            source_headers = self._extract_source_headers_in_block(
+                header_row_idx=price_block_header.row_idx,
+                start_col_idx=price_block_header.col_idx,
+                end_col_idx=price_block_end_col_idx,
+            )
+
         return None
+
+    def _extract_source_headers_in_block(
+        self,
+        *,
+        header_row_idx: int,
+        start_col_idx: int,
+        end_col_idx: int,
+    ) -> list[SourceHeader]:
+        source_headers: list[SourceHeader] = []
+
+        for col_idx in range(start_col_idx, end_col_idx + 1):
+            raw_value = self.ws.cell(row=header_row_idx + 1, column=col_idx).value
+            name = raw_value.strip() if isinstance(raw_value, str) else ""
+            if not name:
+                continue
+            source_headers.append(SourceHeader(col_idx=col_idx, name=name))
+
+        return source_headers
 
 
 
