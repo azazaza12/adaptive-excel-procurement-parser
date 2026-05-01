@@ -3,6 +3,7 @@ from typing import Any
 
 from app.infrastructure.extraction.imcp.common import norm_text
 
+
 _MIN_ANCHOR_WORD_LEN = 1
 
 

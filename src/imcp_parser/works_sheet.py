@@ -3,7 +3,6 @@ from decimal import Decimal
 
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.domain.entities.imcp.result import IMCPResult
 from app.domain.entities.imcp.works_result import WorksOrgAmountResult
 from app.infrastructure.extraction.imcp.base_abstractions import (
     AnyOfAnchors,
@@ -11,11 +10,12 @@ from app.infrastructure.extraction.imcp.base_abstractions import (
 )
 from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
 from app.infrastructure.extraction.imcp.common import (
+    parse_number,
     to_decimal,
     to_stripped_str,
-    parse_number,
 )
 from app.infrastructure.extraction.imcp.models import WorksSheetParseResult
+
 
 _WORKS_SHEET_TITLE_ANCHORS = (
     MatchAnchor("работ"),
@@ -125,7 +125,7 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
                 )
             )
             org_block_end_row_idx = row_idx
-        organizations = organizations if organizations else None
+        organizations = organizations or None
         return organizations, org_block_end_row_idx
 
     def extract_imcp_from_imcp_block(

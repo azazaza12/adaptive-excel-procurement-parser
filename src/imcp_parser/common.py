@@ -2,8 +2,6 @@ import re
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from typing import Any
 
-from openpyxl.worksheet.worksheet import Worksheet
-
 
 _NUM_RE = re.compile(r"[-+]?\d+(?:[.,]\d+)?")
 _MIN_ANCHOR_WORD_LEN = 2
@@ -81,7 +79,7 @@ def to_decimal(value: Any) -> Decimal | None:
     return result
 
 
-def to_stripped_str(value: Any):
+def to_stripped_str(value: Any) -> str | None:
     if not isinstance(value, str):
         return None
     stripped = value.strip()
