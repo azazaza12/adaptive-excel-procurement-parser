@@ -17,11 +17,10 @@ _TITLE_ANCHORS = (
 )
 _ITEM_NAME_HEADER_MATHER = MatchAnchor("наименова товар")
 _GOODS_PRICE_BLOCK_PARENT_ANCHORS = MatchAnchor("цена единицы товара", )
-_AMOUNT_HEADER_MATHER = MatchAnchor("нмц товар")
+_ITEM_IMCP_ANCHORS = MatchAnchor("нмц товар")
 _UNIT_IMCP_ANCHORS = MatchAnchor("нмц единиц", )
 _UNIT_OF_MEASURE_ANCHORS = MatchAnchor("ед изм", )
 _QUANTITY_ANCHORS = AnyOfAnchors(MatchAnchor("кол"), MatchAnchor("всего"))
-_ITEM_IMCP_ANCHORS = AnyOfAnchors(MatchAnchor("нмц товар"), MatchAnchor("нмц"))
 _IMCP_ANCHOR_AVG = MatchAnchor("начальн максимальн цен договор средн арифметическ")
 
 
@@ -52,7 +51,7 @@ class GoodsSheet(BaseSheet):
         sheet = cls(ws)
         if sheet._has_title_anchors(_TITLE_ANCHORS):
             return True
-        return sheet._has_table_header((_AMOUNT_HEADER_MATHER, _ITEM_NAME_HEADER_MATHER))
+        return sheet._has_table_header((_ITEM_IMCP_ANCHORS, _ITEM_NAME_HEADER_MATHER))
 
     def extract(self) -> GoodsSheetParseResult | None:
         header = None
