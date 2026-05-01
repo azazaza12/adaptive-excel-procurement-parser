@@ -65,12 +65,12 @@ class GoodsSheet(BaseSheet):
         item_imcp_header = self._find_header_by(_ITEM_IMCP_ANCHORS)
         item_imcp_avg_header = self._find_header_by(_IMCP_ANCHOR_AVG)
 
-        if index_header and item_name_header and price_block_header and unit_imcp_header and quantity_header and item_imcp_header and item_imcp_avg_header:
+        if index_header and item_name_header and price_block_header and unit_imcp_header and unit_of_measure_anchor and quantity_header and item_imcp_header and item_imcp_avg_header:
             header = GoodsHeader(start_row_idx=index_header.row_idx, end_row_idx=price_block_header.row_idx + 1,
                                  index_col_idx=index_header.col_idx, item_name_col_idx=item_name_header.col_idx,
                                  price_block_start_col_idx=price_block_header.col_idx,
                                  unit_imcp_col_idx=unit_imcp_header.col_idx,
-                                 unit_of_measure_col_idx=unit_of_measure_anchor.col_idx if unit_of_measure_anchor else None,
+                                 unit_of_measure_col_idx=unit_of_measure_anchor.col_idx,
                                  quantity_col_idx=quantity_header.col_idx, item_imcp_col_idx=item_imcp_header.col_idx,
                                  item_imcp_avg_col_idx=item_imcp_avg_header.col_idx)
 
@@ -136,7 +136,7 @@ class GoodsSheet(BaseSheet):
         return prices
 
 
-    def extract_goods_items_until_imcp(self, header: GoodsHeader, parsed_sources: list[ParsedSource], col_idx_to_source_id: dict[int, int]) -> tuple[list[GoodsItem] | None, list[PriceCell] | None, int | None]:
+    def extract_goods_items_until_imcp(self, header: GoodsHeader, parsed_sources: list[ParsedSource], col_idx_to_source_id: dict[int, int]) -> tuple[list[GoodsItem] | None, list[PriceCell], int | None]:
         goods_items: list[GoodsItem] = []
         prices: list[PriceCell] = []
         block_end_row_idx: int | None = None
@@ -160,7 +160,6 @@ class GoodsSheet(BaseSheet):
             prices.extend(prices_for_item)
             block_end_row_idx = row_idx
         goods_items = goods_items if goods_items else None
-        prices = prices if prices else None
         return goods_items, prices, block_end_row_idx
 
 
