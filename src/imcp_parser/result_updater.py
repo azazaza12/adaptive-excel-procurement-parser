@@ -8,7 +8,6 @@ from app.infrastructure.extraction.imcp.models import (
 from app.domain.exceptions import UnsupportedSheetResultError
 
 
-
 @singledispatch
 def update_result(parsed: object, _result: IMCPResult) -> None:
     msg = (
@@ -16,6 +15,7 @@ def update_result(parsed: object, _result: IMCPResult) -> None:
         f"{type(parsed).__qualname__}"
     )
     raise UnsupportedSheetResultError(msg)
+
 
 @update_result.register(WorksSheetParseResult)
 def _(parsed: WorksSheetParseResult, result: IMCPResult) -> None:

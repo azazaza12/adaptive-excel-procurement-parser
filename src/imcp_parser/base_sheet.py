@@ -22,7 +22,6 @@ class BaseSheet[SheetResultT](ABC):
     def __init__(self, ws: Worksheet) -> None:
         self.ws = ws
 
-    def __init_subclass__(cls, **kwargs) -> None:
     def __init_subclass__(cls, **kwargs: object) -> None:
         super().__init_subclass__(**kwargs)
 
