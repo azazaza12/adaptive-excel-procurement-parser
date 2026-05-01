@@ -99,7 +99,9 @@ class GoodsSheet(BaseSheet):
                 item_name_col_idx=item_name_header.col_idx,
                 price_block_start_col_idx=price_block_header.col_idx,
                 unit_imcp_col_idx=unit_imcp_header.col_idx,
-                unit_of_measure_col_idx=unit_of_measure_header.col_idx if unit_of_measure_header else None,
+                unit_of_measure_col_idx=unit_of_measure_header.col_idx
+                if unit_of_measure_header
+                else None,
                 quantity_col_idx=quantity_header.col_idx,
                 item_imcp_col_idx=item_imcp_header.col_idx,
             )
