@@ -3,7 +3,6 @@ from decimal import Decimal
 
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.domain.entities.imcp.result import IMCPResult
 from app.domain.entities.imcp.works_result import WorksOrgAmountResult
 from app.infrastructure.extraction.imcp.base_abstractions import (
     AnyOfAnchors,
@@ -11,11 +10,12 @@ from app.infrastructure.extraction.imcp.base_abstractions import (
 )
 from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
 from app.infrastructure.extraction.imcp.common import (
+    parse_number,
     to_decimal,
     to_stripped_str,
-    parse_number
 )
 from app.infrastructure.extraction.imcp.models import WorksSheetParseResult
+
 
 _WORKS_SHEET_TITLE_ANCHORS = (
     MatchAnchor("работ"),
@@ -48,7 +48,6 @@ class WorksHeader:
 
 
 class WorksSheet(BaseSheet[WorksSheetParseResult]):
-
     @classmethod
     def is_me(cls, ws: Worksheet) -> bool:
         sheet = cls(ws)
@@ -63,7 +62,12 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
         index_header = self._find_header_by(_INDEX_HEADER_MATCHER)
         org_header = self._find_header_by(_ORG_HEADER_MATCHER)
         amount_header = self._find_header_by(_AMOUNT_HEADER_WORKS_OR_SERVICES_MATCHER)
-        if org_header and amount_header and index_header and org_header.row_idx == amount_header.row_idx == index_header.row_idx:
+        if (
+            org_header
+            and amount_header
+            and index_header
+            and org_header.row_idx == amount_header.row_idx == index_header.row_idx
+        ):
             header = WorksHeader(
                 row_idx=org_header.row_idx,
                 index_col_idx=index_header.col_idx,
@@ -72,11 +76,13 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
             )
         if header is None:
             return None
-        org_amount_rows, org_block_end_row_idx = self.extract_org_amount_rows_until_imcp(
-            header
+        org_amount_rows, org_block_end_row_idx = (
+            self.extract_org_amount_rows_until_imcp(header)
         )
         imcp_avg, imcp_limit = self.extract_imcp_from_imcp_block(
-            imcp_start_row_idx=org_block_end_row_idx + 1 if org_block_end_row_idx is not None else None,
+            imcp_start_row_idx=org_block_end_row_idx + 1
+            if org_block_end_row_idx is not None
+            else None,
             amount_col_idx=header.amount_col_idx,
         )
         return WorksSheetParseResult(
@@ -86,7 +92,7 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
         )
 
     def extract_org_amount_rows_until_imcp(
-            self, header: WorksHeader
+        self, header: WorksHeader
     ) -> tuple[list[WorksOrgAmountResult] | None, int | None]:
         organizations: list[WorksOrgAmountResult] = []
         org_block_end_row_idx: int | None = None
@@ -119,15 +125,14 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
                 )
             )
             org_block_end_row_idx = row_idx
-        organizations = organizations if organizations else None
+        organizations = organizations or None
         return organizations, org_block_end_row_idx
 
-
     def extract_imcp_from_imcp_block(
-            self,
-            *,
-            imcp_start_row_idx: int | None,
-            amount_col_idx: int,
+        self,
+        *,
+        imcp_start_row_idx: int | None,
+        amount_col_idx: int,
     ) -> tuple[Decimal | None, Decimal | None]:
         imcp_avg: Decimal | None = None
         imcp_limit: Decimal | None = None
@@ -135,15 +140,18 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
             return imcp_avg, imcp_limit
 
         for row_idx in range(imcp_start_row_idx, self.ws.max_row + 1):
-            if imcp_avg is None and self.row_has_anchor(row_idx=row_idx, anchor=_IMCP_AVG_ROW_MATCHER):
+            if imcp_avg is None and self.row_has_anchor(
+                row_idx=row_idx, anchor=_IMCP_AVG_ROW_MATCHER
+            ):
                 imcp_avg = to_decimal(
                     self.ws.cell(row=row_idx, column=amount_col_idx).value,
                 )
 
-            if imcp_limit is None and self.row_has_anchor(row_idx=row_idx, anchor=_IMCP_LIMIT_ROW_MATCHER):
+            if imcp_limit is None and self.row_has_anchor(
+                row_idx=row_idx, anchor=_IMCP_LIMIT_ROW_MATCHER
+            ):
                 imcp_limit = to_decimal(
-                    self.ws.cell(row=row_idx,
-                                 column=amount_col_idx).value
+                    self.ws.cell(row=row_idx, column=amount_col_idx).value
                 )
 
             if imcp_avg is not None and imcp_limit is not None:

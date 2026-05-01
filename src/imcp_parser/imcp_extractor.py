@@ -1,7 +1,6 @@
 from io import BytesIO
 
 from openpyxl import load_workbook
-from openpyxl.workbook.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
 from app.domain.entities.imcp.result import IMCPResult
@@ -37,7 +36,7 @@ class OpenpyxlExcelIMCPExtractor(IExcelIMCPExtractor):
                     update_result(parsed, result)
                     has_supported_data = True
             if not has_supported_data:
-                raise IMCPNotFoundError()
+                raise IMCPNotFoundError
             return result
         finally:
             wb.close()

@@ -1,8 +1,7 @@
 from decimal import Decimal
 
-from openpyxl import Workbook
-
 from app.infrastructure.extraction.imcp.works_sheet import WorksSheet
+from openpyxl import Workbook
 
 
 _ANCHOR_AVG = (

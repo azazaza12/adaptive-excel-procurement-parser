@@ -124,9 +124,7 @@ def test_extract_imcp_keeps_works_only_partial_contract() -> None:
     assert result.works_imcp_avg == Decimal("2000000.00")
     assert result.works_imcp_limit == Decimal("1900000.00")
     assert result.works_orgs_amounts is not None
-    assert [org.name for org in result.works_orgs_amounts] == [
-        "ООО Альфа"
-    ]
+    assert [org.name for org in result.works_orgs_amounts] == ["ООО Альфа"]
 
 
 def test_extract_imcp_limit_with_short_fallback_anchor() -> None:
