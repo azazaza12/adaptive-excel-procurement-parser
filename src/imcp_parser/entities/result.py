@@ -2,10 +2,10 @@ from decimal import Decimal
 
 from pydantic import BaseModel
 
+from app.domain.entities.imcp.goods_result import GoodsData
 from app.domain.entities.imcp.works_result import (
     WorksOrgAmountResult,
 )
-from app.domain.entities.imcp.goods_result import GoodsData
 
 
 class IMCPResult(BaseModel):

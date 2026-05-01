@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from decimal import Decimal
 
-from app.domain.entities.imcp.works_result import WorksOrgAmountResult
 from app.domain.entities.imcp.goods_result import GoodsData
+from app.domain.entities.imcp.works_result import WorksOrgAmountResult
 
 
 @dataclass(slots=True)

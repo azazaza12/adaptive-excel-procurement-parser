@@ -43,7 +43,7 @@ class NotContainsAnchor(BaseAnchor):
         if not isinstance(value, str):
             return True
         cell_norm = norm_text(value)
-        anchor_words = [word for word in norm_text(self._anchor).split()]
+        anchor_words = list(norm_text(self._anchor).split())
         if not anchor_words:
             return True
         cell_words = cell_norm.split()

@@ -1,26 +1,28 @@
 from dataclasses import dataclass
 from decimal import Decimal
+
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.infrastructure.extraction.imcp.models import GoodsSheetParseResult
-from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
-from app.infrastructure.extraction.imcp.base_abstractions import (
-    MatchAnchor,
-    AnyOfAnchors,
-    NotContainsAnchor,
-    AllOfAnchors,
-)
 from app.domain.entities.imcp.goods_result import (
+    GoodsData,
     GoodsItem,
     PriceCell,
     Source,
-    GoodsData,
 )
+from app.infrastructure.extraction.imcp.base_abstractions import (
+    AllOfAnchors,
+    AnyOfAnchors,
+    MatchAnchor,
+    NotContainsAnchor,
+)
+from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
 from app.infrastructure.extraction.imcp.common import (
     parse_number,
     to_decimal,
     to_stripped_str,
 )
+from app.infrastructure.extraction.imcp.models import GoodsSheetParseResult
+
 
 _INDEX_HEADER_MATCHER = AnyOfAnchors(
     MatchAnchor("№ п п"),
@@ -123,13 +125,12 @@ class GoodsSheet(BaseSheet):
             block_end_row_idx=block_end_row_idx,
             item_imcp_col_idx=header.item_imcp_col_idx,
         )
-        result = GoodsSheetParseResult(
+        return GoodsSheetParseResult(
             goods_data=GoodsData(
                 sources=sources, goods_items=goods_items, prices=prices
             ),
             imcp_avg=imcp_avg,
         )
-        return result
 
     def _extract_sources(
         self,
@@ -244,7 +245,7 @@ class GoodsSheet(BaseSheet):
             )
             prices.extend(prices_for_item)
             block_end_row_idx = row_idx
-        goods_items = goods_items if goods_items else None
+        goods_items = goods_items or None
         return goods_items, prices, block_end_row_idx
 
     def extract_imcp_from_imcp_block(
