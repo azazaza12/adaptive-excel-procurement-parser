@@ -80,7 +80,7 @@ class GoodsSheet(BaseSheet):
         item_name_header = self._find_header_by(_ITEM_NAME_HEADER_MATHER)
         price_block_header = self._find_header_by(_GOODS_PRICE_BLOCK_PARENT_ANCHORS)
         unit_imcp_header = self._find_header_by(_UNIT_IMCP_ANCHORS)
-        unit_of_measure_anchor = self._find_header_by(_UNIT_OF_MEASURE_ANCHORS)
+        unit_of_measure_header = self._find_header_by(_UNIT_OF_MEASURE_ANCHORS)
         quantity_header = self._find_header_by(_QUANTITY_ANCHORS)
         item_imcp_header = self._find_header_by(_ITEM_IMCP_ANCHORS)
 
@@ -89,7 +89,6 @@ class GoodsSheet(BaseSheet):
             and item_name_header
             and price_block_header
             and unit_imcp_header
-            and unit_of_measure_anchor
             and quantity_header
             and item_imcp_header
         ):
@@ -100,7 +99,7 @@ class GoodsSheet(BaseSheet):
                 item_name_col_idx=item_name_header.col_idx,
                 price_block_start_col_idx=price_block_header.col_idx,
                 unit_imcp_col_idx=unit_imcp_header.col_idx,
-                unit_of_measure_col_idx=unit_of_measure_anchor.col_idx,
+                unit_of_measure_col_idx=unit_of_measure_header.col_idx if unit_of_measure_header else None,
                 quantity_col_idx=quantity_header.col_idx,
                 item_imcp_col_idx=item_imcp_header.col_idx,
             )
@@ -222,7 +221,6 @@ class GoodsSheet(BaseSheet):
             if (
                 name is None
                 or unit_imcp is None
-                or unit_of_measure is None
                 or quantity is None
                 or item_imcp is None
             ):

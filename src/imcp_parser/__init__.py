@@ -7,6 +7,8 @@ from app.infrastructure.extraction.imcp.base_abstractions import (
 from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
 from app.infrastructure.extraction.imcp.models import WorksSheetParseResult
 from app.infrastructure.extraction.imcp.works_sheet import WorksSheet
+from app.infrastructure.extraction.imcp.goods_sheet import GoodsSheet
+from app.infrastructure.extraction.imcp.models import GoodsSheetParseResult
 
 
 __all__ = [
@@ -17,4 +19,6 @@ __all__ = [
     "MatchAnchor",
     "WorksSheet",
     "WorksSheetParseResult",
+    "GoodsSheet",
+    "GoodsSheetParseResult",
 ]
