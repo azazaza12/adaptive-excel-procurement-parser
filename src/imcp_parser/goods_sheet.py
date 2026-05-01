@@ -86,10 +86,9 @@ class GoodsSheet(BaseSheet):
         )
 
         sources, col_idx_to_source_id = self.map_sources(parsed_sources)
-        goods_items, block_end_row_idx = self.extract_goods_items_until_imcp(
-            header
+        goods_items, prices, block_end_row_idx = self.extract_goods_items_until_imcp(
+            header, parsed_sources, col_idx_to_source_id
         )
-        prices = self.extract_prices(header, parsed_sources, col_idx_to_source_id)
         if prices is None or sources is None or goods_items is None:
             return None
         imcp_avg = self.extract_imcp_from_imcp_block(block_end_row_idx=block_end_row_idx, item_imcp_col_idx=header.item_imcp_col_idx)
@@ -126,26 +125,20 @@ class GoodsSheet(BaseSheet):
         return sources, col_idx_to_source_id
 
 
-
-
-    def extract_prices(self, header: GoodsHeader, parsed_sources: list[ParsedSource], col_idx_to_source_id) -> list[PriceCell] | None:
+    def extract_prices_for_item(self, *, row_idx: int, item_id: int, parsed_sources: list[ParsedSource], col_idx_to_source_id: dict[int, int]) -> list[PriceCell]:
         prices: list[PriceCell] = []
-        for row_idx in range(header.end_row_idx +1, self.ws.max_row+1):
-            raw_iter_number = self.ws.cell(row=row_idx, column=header.index_col_idx).value
-            parsed_item_number = parse_number(raw_iter_number)
-            if parsed_item_number is None:
-                break
-            for parsed_source in parsed_sources:
-                price = to_decimal(self.ws.cell(row=row_idx, column=parsed_source.col_idx).value)
-                if price is None:
-                    continue
-                prices.append(PriceCell(source_id=col_idx_to_source_id[parsed_source.col_idx], item_id=parsed_item_number, price=price))
-        prices = prices if prices else None
+        for parsed_source in parsed_sources:
+            price = to_decimal(self.ws.cell(row=row_idx, column=parsed_source.col_idx).value)
+            if price is None:
+                continue
+            prices.append(PriceCell(source_id=col_idx_to_source_id[parsed_source.col_idx], item_id=item_id,
+                          price=price))
         return prices
 
 
-    def extract_goods_items_until_imcp(self, header: GoodsHeader) -> tuple[list[GoodsItem] | None, int | None]:
+    def extract_goods_items_until_imcp(self, header: GoodsHeader, parsed_sources: list[ParsedSource], col_idx_to_source_id: dict[int, int]) -> tuple[list[GoodsItem] | None, list[PriceCell] | None, int | None]:
         goods_items: list[GoodsItem] = []
+        prices: list[PriceCell] = []
         block_end_row_idx: int | None = None
 
         for row_idx in range(header.end_row_idx+1, self.ws.max_row+1):
@@ -163,9 +156,12 @@ class GoodsSheet(BaseSheet):
             if name is None or unit_imcp is None or unit_of_measure is None or quantity is None or item_imcp is None:
                 continue
             goods_items.append(GoodsItem(id=parsed_item_number, name=name, unit_of_measure=unit_of_measure, unit_imcp=unit_imcp, quantity=quantity, item_imcp=item_imcp))
+            prices_for_item = self.extract_prices_for_item(row_idx=row_idx, item_id=parsed_item_number, parsed_sources=parsed_sources, col_idx_to_source_id=col_idx_to_source_id)
+            prices.extend(prices_for_item)
             block_end_row_idx = row_idx
         goods_items = goods_items if goods_items else None
-        return goods_items, block_end_row_idx
+        prices = prices if prices else None
+        return goods_items, prices, block_end_row_idx
 
 
     def extract_imcp_from_imcp_block(self, *, block_end_row_idx: int | None, item_imcp_col_idx: int) -> Decimal | None:
