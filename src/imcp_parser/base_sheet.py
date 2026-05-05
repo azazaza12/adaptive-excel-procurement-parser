@@ -1,13 +1,11 @@
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import ClassVar, TypeVar
+from typing import ClassVar
 
 from openpyxl.worksheet.worksheet import Worksheet
 
 from app.infrastructure.extraction.imcp.base_abstractions import BaseAnchor
-
-
-SheetResultT = TypeVar("SheetResultT")
 
 
 @dataclass(slots=True)
@@ -24,9 +22,6 @@ class BaseSheet[SheetResultT](ABC):
 
     def __init_subclass__(cls, **kwargs: object) -> None:
         super().__init_subclass__(**kwargs)
-
-        if getattr(cls, "__abstractmethods__", False):
-            return
         BaseSheet._registry.append(cls)
 
     @classmethod
@@ -57,9 +52,9 @@ class BaseSheet[SheetResultT](ABC):
                     return HeaderCell(row_idx=row_idx, col_idx=cell.column)
         return None
 
-    def _has_title_anchors(self, title_anchors: tuple[BaseAnchor, ...]) -> bool:
+    def _has_title_anchors(self, title_anchors: Sequence[BaseAnchor, ...]) -> bool:
         return all(anchor.matches(self.ws.title) for anchor in title_anchors)
 
-    def _has_table_header(self, anchors: tuple[BaseAnchor, ...]) -> bool:
+    def _has_table_header(self, anchors: Sequence[BaseAnchor, ...]) -> bool:
         headers = [self._find_header_by(anchor) for anchor in anchors]
         return bool(all(header is not None for header in headers))

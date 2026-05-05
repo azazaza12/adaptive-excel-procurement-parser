@@ -3,12 +3,12 @@ from decimal import Decimal
 from pydantic import BaseModel
 
 
-class Source(BaseModel):
+class GoodsOrgResult(BaseModel):
     id: int
     name: str
 
 
-class GoodsItem(BaseModel):
+class GoodsItemResult(BaseModel):
     id: int
     name: str
     unit_of_measure: str | None = None
@@ -17,13 +17,13 @@ class GoodsItem(BaseModel):
     item_imcp: Decimal | None = None
 
 
-class PriceCell(BaseModel):
-    source_id: int
+class GoodsOrgAmountResult(BaseModel):
+    organization_id: int
     item_id: int
-    price: Decimal
+    amount: Decimal
 
 
-class GoodsData(BaseModel):
-    sources: list[Source]
-    goods_items: list[GoodsItem]
-    prices: list[PriceCell]
+class GoodsOrgsAmountsResult(BaseModel):
+    organizations: list[GoodsOrgResult]
+    goods_items: list[GoodsItemResult]
+    cells: list[GoodsOrgAmountResult]

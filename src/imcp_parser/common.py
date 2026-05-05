@@ -32,25 +32,6 @@ def parse_number(value: object) -> int | None:
     return None
 
 
-def match_anchor(cell_value: str, anchor: str) -> bool:
-    if not isinstance(cell_value, str):
-        return False
-
-    cell_norm = norm_text(cell_value)
-    anchor_words = [
-        word for word in norm_text(anchor).split() if len(word) >= _MIN_ANCHOR_WORD_LEN
-    ]
-    if not anchor_words:
-        return False
-    cell_words = cell_norm.split()
-
-    for anchor_word in anchor_words:
-        if not any(word.startswith(anchor_word) for word in cell_words):
-            return False
-
-    return True
-
-
 def to_decimal(value: Any) -> Decimal | None:
     result: Decimal | None = None
 
