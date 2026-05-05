@@ -50,7 +50,7 @@ def test_extract_initial_max_contract_price_happy_path_two_sheets() -> None:
     result = extractor.extract_imcp(content=_wb_to_bytes(wb))
 
     assert result.goods_imcp_avg is None
-    assert result.goods_orgs_amounts is None
+    assert result.goods_data is None
     assert result.works_imcp_avg == Decimal("12331372.00")
     assert result.works_imcp_limit == Decimal("12000000.00")
     assert result.works_orgs_amounts is not None
@@ -120,7 +120,7 @@ def test_extract_imcp_keeps_works_only_partial_contract() -> None:
     result = extractor.extract_imcp(content=_wb_to_bytes(wb))
 
     assert result.goods_imcp_avg is None
-    assert result.goods_orgs_amounts is None
+    assert result.goods_data is None
     assert result.works_imcp_avg == Decimal("2000000.00")
     assert result.works_imcp_limit == Decimal("1900000.00")
     assert result.works_orgs_amounts is not None

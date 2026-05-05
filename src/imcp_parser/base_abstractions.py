@@ -9,8 +9,24 @@ _MIN_ANCHOR_WORD_LEN = 1
 
 class BaseAnchor(ABC):
     @abstractmethod
-    def matches(self, value: str) -> bool:
+    def matches(self, value: Any) -> bool:
         pass
+
+
+def _contains_words(anchor: str, value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    cell_norm = norm_text(value)
+    anchor_words = [
+        word for word in norm_text(anchor).split() if len(word) >= _MIN_ANCHOR_WORD_LEN
+    ]
+    if not anchor_words:
+        return False
+    cell_words = cell_norm.split()
+    for anchor_word in anchor_words:
+        if not any(word.startswith(anchor_word) for word in cell_words):
+            return False
+    return True
 
 
 class MatchAnchor(BaseAnchor):
@@ -18,21 +34,15 @@ class MatchAnchor(BaseAnchor):
         self._anchor = anchor
 
     def matches(self, value: Any) -> bool:
-        if not isinstance(value, str):
-            return False
-        cell_norm = norm_text(value)
-        anchor_words = [
-            word
-            for word in norm_text(self._anchor).split()
-            if len(word) >= _MIN_ANCHOR_WORD_LEN
-        ]
-        if not anchor_words:
-            return False
-        cell_words = cell_norm.split()
-        for anchor_word in anchor_words:
-            if not any(word.startswith(anchor_word) for word in cell_words):
-                return False
-        return True
+        return _contains_words(self._anchor, value)
+
+
+class NotContainsAnchor(BaseAnchor):
+    def __init__(self, anchor: str) -> None:
+        self._anchor = anchor
+
+    def matches(self, value: Any) -> bool:
+        return not _contains_words(self._anchor, value)
 
 
 class AnyOfAnchors(BaseAnchor):
@@ -43,3 +53,11 @@ class AnyOfAnchors(BaseAnchor):
         if not isinstance(value, str):
             return False
         return any(anchor.matches(value) for anchor in self._anchors)
+
+
+class AllOfAnchors(BaseAnchor):
+    def __init__(self, *anchors: BaseAnchor) -> None:
+        self._anchors = anchors
+
+    def matches(self, value: Any) -> bool:
+        return all(anchor.matches(value) for anchor in self._anchors)

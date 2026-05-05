@@ -52,8 +52,8 @@ class BaseSheet[SheetResultT](ABC):
                     return HeaderCell(row_idx=row_idx, col_idx=cell.column)
         return None
 
-    def _has_title_anchors(self, title_anchors: Sequence[BaseAnchor, ...]) -> bool:
-        return all(anchor.matches(self.ws.title) for anchor in title_anchors)
+    def _has_title_anchors(self, anchor: BaseAnchor) -> bool:
+        return anchor.matches(self.ws.title)
 
     def _has_table_header(self, anchors: Sequence[BaseAnchor, ...]) -> bool:
         headers = [self._find_header_by(anchor) for anchor in anchors]
