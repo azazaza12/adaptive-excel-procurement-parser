@@ -1,16 +1,17 @@
 from .fields import (
-    ExcelGoodsIMCPAvgField,
-    ExcelGoodsOrganizationsAmountsField,
-    ExcelWorksIMCPAvgField,
-    ExcelWorksIMCPLimitField,
-    ExcelWorksOrganizationsAmountsField,
+    IMCPAvgField,
+    IMCPLimitField,
+    OrganizationSpecificationField,
+    OrganizationTotalAmountField,
 )
+from .result import IMCPResult, VatInfo
 
 
 __all__ = [
-    "ExcelGoodsIMCPAvgField",
-    "ExcelGoodsOrganizationsAmountsField",
-    "ExcelWorksIMCPAvgField",
-    "ExcelWorksIMCPLimitField",
-    "ExcelWorksOrganizationsAmountsField",
+    "IMCPAvgField",
+    "IMCPLimitField",
+    "IMCPResult",
+    "OrganizationSpecificationField",
+    "OrganizationTotalAmountField",
+    "VatInfo",
 ]

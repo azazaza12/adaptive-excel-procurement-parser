@@ -44,13 +44,24 @@ class BaseSheet[SheetResultT](ABC):
                 return True
         return False
 
-    def _find_header_by(self, anchor: BaseAnchor) -> HeaderCell | None:
-        for row_idx, row in enumerate(self.ws.iter_rows(), start=1):
+    def _find_cell_by(
+        self, anchor: BaseAnchor, *, row_idx: int | None = None
+    ) -> HeaderCell | None:
+        if row_idx is not None:
+            for col_idx in range(1, self.ws.max_column + 1):
+                value = self.ws.cell(row=row_idx, column=col_idx).value
+                if anchor.matches(value):
+                    return HeaderCell(row_idx=row_idx, col_idx=col_idx)
+            return None
+        for row_idx_iter, row in enumerate(self.ws.iter_rows(), start=1):
             for cell in row:
                 value = cell.value
                 if anchor.matches(value):
-                    return HeaderCell(row_idx=row_idx, col_idx=cell.column)
+                    return HeaderCell(row_idx=row_idx_iter, col_idx=cell.column)
         return None
+
+    def _find_header_by(self, anchor: BaseAnchor) -> HeaderCell | None:
+        return self._find_cell_by(anchor)
 
     def _has_title_anchors(self, anchor: BaseAnchor) -> bool:
         return anchor.matches(self.ws.title)

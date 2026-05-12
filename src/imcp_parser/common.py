@@ -2,8 +2,31 @@ import re
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from typing import Any
 
+from app.domain.entities.imcp.result import VatInfo
+
 
 _NUM_RE = re.compile(r"[-+]?\d+(?:[.,]\d+)?")
+_CELL_TEXT_VAT_RATE_RE = re.compile(r"(?i)НДС\D*(\d+)\s*%?")
+_CELL_TEXT_VAT_RATE_BEFORE_NDS_RE = re.compile(r"(?i)(\d+)\s*%\s*НДС")
+_NO_VAT_PATTERNS = (
+    re.compile(r"(?i)\bндс\s+не\s+предусмотрен\b"),
+    re.compile(r"(?i)\bндс\s+не\s+облагается\b"),
+    re.compile(r"(?i)\bне\s+облагается\s+ндс\b"),
+    re.compile(r"(?i)\bндс\s+не\s+начисляется\b"),
+)
+_INCLUDE_VAT_PATTERNS = (
+    re.compile(r"(?i)\bс\s+ндс\b"),
+    re.compile(r"(?i)\bв\s+том\s+числе\s+ндс\b"),
+    re.compile(r"(?i)\bв\s*т\.?\s*ч\.?\s*ндс\b"),
+    re.compile(r"(?i)\bндс\s+включ[её]н\b"),
+    re.compile(r"(?i)\bс\s+уч[её]том\s+ндс\b"),
+    re.compile(r"(?i)\bвключая\s+ндс\b"),
+)
+_NOT_INCLUDE_VAT_PATTERNS = (
+    re.compile(r"(?i)\bбез\s+уч[её]та\s+ндс\b"),
+    re.compile(r"(?i)\bндс\s+не\s+включ[её]н\b"),
+    re.compile(r"(?i)\bбез\s+ндс\b"),
+)
 _MIN_ANCHOR_WORD_LEN = 2
 _TWO_DECIMAL_PLACES = Decimal("0.01")
 _TWO_DECIMAL_PLACES_EXPONENT = -2
@@ -65,3 +88,52 @@ def to_stripped_str(value: Any) -> str | None:
         return None
     stripped = value.strip()
     return stripped or None
+
+
+def parse_vat_info_from_cell_text(value: Any) -> VatInfo | None:
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    if not text:
+        return None
+
+    vat_rate = _extract_vat_rate(text)
+    if vat_rate is not None:
+        included_vat = _extract_vat_included(text)
+        return VatInfo(rate=vat_rate, included=included_vat)
+    vat_rate, included_vat = _extract_no_vat(text)
+    if vat_rate is None and included_vat is None:
+        return None
+    return VatInfo(rate=vat_rate, included=included_vat)
+
+
+def _extract_vat_rate(text: str) -> int | None:
+    match = _CELL_TEXT_VAT_RATE_RE.search(text)
+    if match is not None:
+        return int(match.group(1))
+
+    match = _CELL_TEXT_VAT_RATE_BEFORE_NDS_RE.search(text)
+    if match is not None:
+        return int(match.group(1))
+    return None
+
+
+def _extract_vat_included(text: str) -> bool | None:
+    for pattern in _NOT_INCLUDE_VAT_PATTERNS:
+        match = pattern.search(text)
+        if match is not None:
+            return False
+    for pattern in _INCLUDE_VAT_PATTERNS:
+        match = pattern.search(text)
+        if match is not None:
+            return True
+    return None
+
+
+def _extract_no_vat(text: str) -> tuple[int | None, bool | None]:
+    for pattern in _NO_VAT_PATTERNS:
+        match = pattern.search(text)
+        if match is not None:
+            return 0, None
+    included_vat = _extract_vat_included(text)
+    return None, included_vat

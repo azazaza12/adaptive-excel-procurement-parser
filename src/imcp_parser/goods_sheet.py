@@ -6,9 +6,10 @@ from openpyxl.worksheet.worksheet import Worksheet
 from app.domain.entities.imcp.goods_result import (
     GoodsData,
     GoodsItem,
+    Organization,
     PriceCell,
-    Source,
 )
+from app.domain.entities.imcp.result import VatInfo
 from app.infrastructure.extraction.imcp.base_abstractions import (
     AllOfAnchors,
     AnyOfAnchors,
@@ -18,6 +19,7 @@ from app.infrastructure.extraction.imcp.base_abstractions import (
 from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
 from app.infrastructure.extraction.imcp.common import (
     parse_number,
+    parse_vat_info_from_cell_text,
     to_decimal,
     to_stripped_str,
 )
@@ -39,7 +41,7 @@ _IMCP_ANCHOR_AVG = MatchAnchor("начальн максимальн цен до�
 
 
 @dataclass(slots=True)
-class ParsedSource:
+class ParsedOrganization:
     col_idx: int
     name: str
 
@@ -101,76 +103,81 @@ class GoodsSheet(BaseSheet):
             return None
 
         price_block_end_col_idx = unit_imcp_header.col_idx - 1
-        parsed_sources = self._extract_sources(
+        parsed_organizations = self._extract_organizations(
             header_row_idx=price_block_header.row_idx,
             start_col_idx=price_block_header.col_idx,
             end_col_idx=price_block_end_col_idx,
         )
 
-        sources, col_idx_to_source_id = self._map_sources(parsed_sources)
+        organizations, col_idx_to_organization_id = self._map_sources(
+            parsed_organizations
+        )
         goods_items, prices, block_end_row_idx = self.extract_goods_items_until_imcp(
-            header, parsed_sources, col_idx_to_source_id
+            header, parsed_organizations, col_idx_to_organization_id
         )
         if prices is None or goods_items is None:
             return None
-        imcp_avg = self.extract_imcp_from_imcp_block(
+        imcp_avg, vat_rate_info = self.extract_imcp_from_imcp_block(
             block_end_row_idx=block_end_row_idx,
             item_imcp_col_idx=header.item_imcp_col_idx,
         )
         return GoodsSheetParseResult(
             goods_data=GoodsData(
-                sources=sources, goods_items=goods_items, price_cells=prices
+                organizations=organizations, goods_items=goods_items, price_cells=prices
             ),
             imcp_avg=imcp_avg,
+            vat_rate_info=vat_rate_info,
         )
 
-    def _extract_sources(
+    def _extract_organizations(
         self,
         *,
         header_row_idx: int,
         start_col_idx: int,
         end_col_idx: int,
-    ) -> list[ParsedSource]:
-        sources: list[ParsedSource] = []
+    ) -> list[ParsedOrganization]:
+        organizations: list[ParsedOrganization] = []
 
         for col_idx in range(start_col_idx, end_col_idx + 1):
             raw_value = self.ws.cell(row=header_row_idx + 1, column=col_idx).value
             name = raw_value.strip() if isinstance(raw_value, str) else ""
             if not name:
                 continue
-            sources.append(ParsedSource(col_idx=col_idx, name=name))
+            organizations.append(ParsedOrganization(col_idx=col_idx, name=name))
 
-        return sources
+        return organizations
 
     def _map_sources(
-        self, parsed_sources: list[ParsedSource]
-    ) -> tuple[list[Source], dict[int, int]]:
-        sources: list[Source] = []
-        col_idx_to_source_id: dict[int, int] = {}
-        for i, parsed in enumerate(parsed_sources, start=1):
-            source_id = i
-            sources.append(Source(id=source_id, name=parsed.name))
-            col_idx_to_source_id[parsed.col_idx] = source_id
-        return sources, col_idx_to_source_id
+        self, parsed_organizations: list[ParsedOrganization]
+    ) -> tuple[list[Organization], dict[int, int]]:
+        organizations: list[Organization] = []
+        col_idx_to_organization_id: dict[int, int] = {}
+        for i, parsed in enumerate(parsed_organizations, start=1):
+            organization_id = i
+            organizations.append(Organization(id=organization_id, name=parsed.name))
+            col_idx_to_organization_id[parsed.col_idx] = organization_id
+        return organizations, col_idx_to_organization_id
 
     def extract_prices_for_item(
         self,
         *,
         row_idx: int,
         item_id: int,
-        parsed_sources: list[ParsedSource],
-        col_idx_to_source_id: dict[int, int],
+        parsed_organizations: list[ParsedOrganization],
+        col_idx_to_organization_id: dict[int, int],
     ) -> list[PriceCell]:
         prices: list[PriceCell] = []
-        for parsed_source in parsed_sources:
+        for parsed_organization in parsed_organizations:
             price = to_decimal(
-                self.ws.cell(row=row_idx, column=parsed_source.col_idx).value
+                self.ws.cell(row=row_idx, column=parsed_organization.col_idx).value
             )
             if price is None:
                 continue
             prices.append(
                 PriceCell(
-                    source_id=col_idx_to_source_id[parsed_source.col_idx],
+                    organization_id=col_idx_to_organization_id[
+                        parsed_organization.col_idx
+                    ],
                     item_id=item_id,
                     price=price,
                 )
@@ -180,8 +187,8 @@ class GoodsSheet(BaseSheet):
     def extract_goods_items_until_imcp(
         self,
         header: GoodsHeader,
-        parsed_sources: list[ParsedSource],
-        col_idx_to_source_id: dict[int, int],
+        parsed_organization: list[ParsedOrganization],
+        col_idx_to_organization_id: dict[int, int],
     ) -> tuple[list[GoodsItem] | None, list[PriceCell], int | None]:
         goods_items: list[GoodsItem] = []
         prices: list[PriceCell] = []
@@ -231,8 +238,8 @@ class GoodsSheet(BaseSheet):
             prices_for_item = self.extract_prices_for_item(
                 row_idx=row_idx,
                 item_id=parsed_item_number,
-                parsed_sources=parsed_sources,
-                col_idx_to_source_id=col_idx_to_source_id,
+                parsed_organizations=parsed_organization,
+                col_idx_to_organization_id=col_idx_to_organization_id,
             )
             prices.extend(prices_for_item)
             block_end_row_idx = row_idx
@@ -241,15 +248,20 @@ class GoodsSheet(BaseSheet):
 
     def extract_imcp_from_imcp_block(
         self, *, block_end_row_idx: int | None, item_imcp_col_idx: int
-    ) -> Decimal | None:
-        imcp_avg = None
+    ) -> tuple[Decimal | None, VatInfo | None]:
+        imcp_avg: Decimal | None = None
+        vat_rate: VatInfo | None = None
         if block_end_row_idx is None:
-            return imcp_avg
+            return imcp_avg, vat_rate
         for row_idx in range(block_end_row_idx + 1, self.ws.max_row + 1):
-            if self.row_has_anchor(row_idx=row_idx, anchor=_IMCP_ANCHOR_AVG):
+            label_cell = self._find_cell_by(_IMCP_ANCHOR_AVG, row_idx=row_idx)
+            if label_cell is not None:
                 imcp_avg = to_decimal(
                     self.ws.cell(row=row_idx, column=item_imcp_col_idx).value
                 )
-            if imcp_avg is not None:
+                label_value = self.ws.cell(
+                    row=label_cell.row_idx, column=label_cell.col_idx
+                ).value
+                vat_rate = parse_vat_info_from_cell_text(label_value)
                 break
-        return imcp_avg
+        return imcp_avg, vat_rate

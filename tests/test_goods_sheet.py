@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from app.domain.entities.imcp.result import VatInfo
 from app.infrastructure.extraction.imcp.goods_sheet import GoodsSheet
 from openpyxl import Workbook
 
@@ -7,6 +8,10 @@ from openpyxl import Workbook
 _ANCHOR_AVG = (
     "Начальная (максимальная) цена договора (среднее арифметическое значение) "
     "составляет, руб. в т.ч. НДС 20%"
+)
+_ANCHOR_AVG_NO_VAT_RATE = (
+    "Начальная (максимальная) цена договора (среднее арифметическое значение) "
+    "составляет, руб."
 )
 
 
@@ -70,9 +75,13 @@ def test_goods_sheet_extract_returns_sources_items_prices_and_imcp_avg() -> None
 
     assert result is not None
     assert result.imcp_avg == Decimal("13668834.30")
+    assert result.vat_rate_info == VatInfo(rate=20, included=True)
     assert result.goods_data is not None
-    assert [source.id for source in result.goods_data.sources] == [1, 2]
-    assert [source.name for source in result.goods_data.sources] == [
+    assert [organization.id for organization in result.goods_data.organizations] == [
+        1,
+        2,
+    ]
+    assert [organization.name for organization in result.goods_data.organizations] == [
         "ООО Альфа",
         "ООО Бета",
     ]
@@ -81,7 +90,12 @@ def test_goods_sheet_extract_returns_sources_items_prices_and_imcp_avg() -> None
         "Фланг SoftSwitch",
         "Фланг Контакт",
     ]
-    assert [price.source_id for price in result.goods_data.price_cells] == [1, 2, 1, 2]
+    assert [price.organization_id for price in result.goods_data.price_cells] == [
+        1,
+        2,
+        1,
+        2,
+    ]
     assert [price.item_id for price in result.goods_data.price_cells] == [1, 1, 2, 2]
     assert [price.price for price in result.goods_data.price_cells] == [
         Decimal("2766.15"),
@@ -89,3 +103,71 @@ def test_goods_sheet_extract_returns_sources_items_prices_and_imcp_avg() -> None
         Decimal("12142.49"),
         Decimal("13056.44"),
     ]
+
+
+def test_goods_sheet_extract_vat_rate_percent_none_when_not_in_label() -> None:
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Лист с расчетом"
+
+    ws["A1"] = "№ п/п"
+    ws["B1"] = "Наименование товара"
+    ws["C1"] = "Цена единицы товара, руб."
+    ws["E1"] = "НМЦ единицы товара, руб. с НДС"
+    ws["F1"] = "Ед. изм"
+    ws["G1"] = "Кол-во"
+    ws["H1"] = "НМЦ товара (среднее арифметическое значение), руб. в т.ч. НДС"
+    ws["I1"] = _ANCHOR_AVG_NO_VAT_RATE
+
+    ws["C2"] = "ООО Альфа"
+    ws["D2"] = "ООО Бета"
+
+    ws["A3"] = "1"
+    ws["B3"] = "Товар А"
+    ws["C3"] = "100"
+    ws["D3"] = "100"
+    ws["E3"] = "100"
+    ws["F3"] = "шт"
+    ws["G3"] = "1"
+    ws["H3"] = "100"
+
+    ws["B4"] = _ANCHOR_AVG_NO_VAT_RATE
+    ws["H4"] = "100"
+
+    result = GoodsSheet(ws).extract()
+
+    assert result is not None
+    assert result.imcp_avg == Decimal(100)
+    assert result.vat_rate_info is None
+
+
+def test_goods_sheet_extract_vat_when_imcp_avg_cell_empty() -> None:
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Лист с расчетом"
+
+    ws["A1"] = "№ п/п"
+    ws["B1"] = "Наименование товара"
+    ws["C1"] = "Цена единицы товара, руб."
+    ws["E1"] = "НМЦ единицы товара, руб. с НДС"
+    ws["F1"] = "Ед. изм"
+    ws["G1"] = "Кол-во"
+    ws["H1"] = "НМЦ товара (среднее арифметическое значение), руб. в т.ч. НДС"
+
+    ws["C2"] = "ООО Альфа"
+
+    ws["A3"] = "1"
+    ws["B3"] = "Товар А"
+    ws["C3"] = "100"
+    ws["E3"] = "100"
+    ws["F3"] = "шт"
+    ws["G3"] = "1"
+    ws["H3"] = "100"
+
+    ws["B4"] = _ANCHOR_AVG
+
+    result = GoodsSheet(ws).extract()
+
+    assert result is not None
+    assert result.imcp_avg is None
+    assert result.vat_rate_info == VatInfo(rate=20, included=True)

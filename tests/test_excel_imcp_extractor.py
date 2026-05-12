@@ -1,7 +1,7 @@
 from decimal import Decimal
 from io import BytesIO
 
-from app.infrastructure.extraction.imcp_extractor import (
+from app.infrastructure.extraction.imcp.imcp_extractor import (
     OpenpyxlExcelIMCPExtractor,
 )
 from openpyxl import Workbook

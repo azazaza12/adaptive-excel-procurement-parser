@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from openpyxl.worksheet.worksheet import Worksheet
 
+from app.domain.entities.imcp.result import VatInfo
 from app.domain.entities.imcp.works_result import WorksOrgAmountResult
 from app.infrastructure.extraction.imcp.base_abstractions import (
     AnyOfAnchors,
@@ -11,6 +12,7 @@ from app.infrastructure.extraction.imcp.base_abstractions import (
 from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
 from app.infrastructure.extraction.imcp.common import (
     parse_number,
+    parse_vat_info_from_cell_text,
     to_decimal,
     to_stripped_str,
 )
@@ -69,10 +71,14 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
             )
         if header is None:
             return None
+        amount_header_vat_info = parse_vat_info_from_cell_text(
+            self.ws.cell(row=header.row_idx, column=header.amount_col_idx).value
+        )
+
         org_amount_rows, org_block_end_row_idx = (
             self.extract_org_amount_rows_until_imcp(header)
         )
-        imcp_avg, imcp_limit = self.extract_imcp_from_imcp_block(
+        imcp_avg, imcp_limit, imcp_avg_row_vat_info = self.extract_imcp_from_imcp_block(
             imcp_start_row_idx=org_block_end_row_idx + 1
             if org_block_end_row_idx is not None
             else None,
@@ -82,6 +88,8 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
             imcp_avg=imcp_avg,
             imcp_limit=imcp_limit,
             orgs_amounts=org_amount_rows,
+            amount_header_vat_info=amount_header_vat_info,
+            imcp_avg_row_vat_info=imcp_avg_row_vat_info,
         )
 
     def extract_org_amount_rows_until_imcp(
@@ -126,19 +134,23 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
         *,
         imcp_start_row_idx: int | None,
         amount_col_idx: int,
-    ) -> tuple[Decimal | None, Decimal | None]:
+    ) -> tuple[Decimal | None, Decimal | None, VatInfo | None]:
         imcp_avg: Decimal | None = None
         imcp_limit: Decimal | None = None
+        vat_rate_info: VatInfo | None = None
         if imcp_start_row_idx is None:
-            return imcp_avg, imcp_limit
+            return imcp_avg, imcp_limit, vat_rate_info
 
         for row_idx in range(imcp_start_row_idx, self.ws.max_row + 1):
-            if imcp_avg is None and self.row_has_anchor(
-                row_idx=row_idx, anchor=_IMCP_AVG_ROW_ANCHOR
-            ):
+            label_cell = self._find_cell_by(_IMCP_AVG_ROW_ANCHOR, row_idx=row_idx)
+            if label_cell is not None:
                 imcp_avg = to_decimal(
                     self.ws.cell(row=row_idx, column=amount_col_idx).value,
                 )
+                label_value = self.ws.cell(
+                    row=label_cell.row_idx, column=label_cell.col_idx
+                ).value
+                vat_rate_info = parse_vat_info_from_cell_text(label_value)
 
             if imcp_limit is None and self.row_has_anchor(
                 row_idx=row_idx, anchor=_IMCP_LIMIT_ROW_ANCHOR
@@ -147,9 +159,13 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
                     self.ws.cell(row=row_idx, column=amount_col_idx).value
                 )
 
-            if imcp_avg is not None and imcp_limit is not None:
+            if (
+                imcp_avg is not None
+                and imcp_limit is not None
+                and vat_rate_info is not None
+            ):
                 break
             if self.row_has_anchor(row_idx=row_idx, anchor=_INSTRUCTION_ROW_ANCHOR):
                 break
 
-        return imcp_avg, imcp_limit
+        return imcp_avg, imcp_limit, vat_rate_info
