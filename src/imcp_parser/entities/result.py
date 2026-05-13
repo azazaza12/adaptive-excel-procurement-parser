@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from decimal import Decimal
 
 from pydantic import BaseModel
@@ -8,7 +9,8 @@ from app.domain.entities.imcp.works_result import (
 )
 
 
-class VatInfo(BaseModel):
+@dataclass
+class VatInfo:
     rate: int | None
     included: bool | None
 

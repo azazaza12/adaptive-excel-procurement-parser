@@ -1,8 +1,20 @@
 from decimal import Decimal
 from io import BytesIO
 
+from app.domain.entities.imcp.goods_result import (
+    GoodsData,
+    GoodsItem,
+    Organization,
+    PriceCell,
+)
+from app.domain.entities.imcp.result import IMCPResult, VatInfo
+from app.domain.entities.imcp.works_result import WorksOrgAmountResult
 from app.infrastructure.extraction.imcp.imcp_extractor import (
     OpenpyxlExcelIMCPExtractor,
+    _is_placeholder,
+    _normalize_name,
+    _normalize_organization_names,
+    _pick_normalized_name,
 )
 from openpyxl import Workbook
 
@@ -178,3 +190,107 @@ def test_extract_imcp_ignores_non_works_sheet_for_works_result() -> None:
     assert result.works_imcp_limit == Decimal("1500.00")
     assert result.works_orgs_amounts is not None
     assert [org.name for org in result.works_orgs_amounts] == ["ООО Бета"]
+
+
+def test_normalize_name_basic_cleanup() -> None:
+    name = " ООО Ёшкин  кот"
+    normalized_name = _normalize_name(name)
+    gold_normalized_name = "ооо ешкин кот"
+    assert normalized_name == gold_normalized_name
+
+
+def test_is_placeholder_detect_empties_and_templates() -> None:
+    assert _is_placeholder("") is True
+    assert _is_placeholder("-") is True
+    assert _is_placeholder("орг-я") is True
+    assert _is_placeholder("ООО Эпсилон") is False
+    assert _is_placeholder("Организация") is True
+    assert _is_placeholder("Контрагент") is True
+    assert _is_placeholder("Самозанятый Иванов") is False
+    assert _is_placeholder("Организаци") is True
+    assert _is_placeholder("Организация 3") is True
+    assert _is_placeholder("Орг-ция 2") is True
+    assert _is_placeholder("контрагент 1") is True
+
+    assert _is_placeholder('ООО "Эгис"') is False
+    assert _is_placeholder("ИП Иванов Иван Иванович") is False
+
+
+def test_pick_normalize_org_name() -> None:
+    names = ["Орг-ция 1", 'ООО "НВК Монтаж"']
+    assert _pick_normalized_name(names) == 'ООО "НВК Монтаж"'
+
+    names = ["Орг-ция 2", 'ООО "Эгис"']
+    assert _pick_normalized_name(names) == 'ООО "Эгис"'
+
+    names = ["организация 3", 'ООО "ЮГ Поволжье"']
+    assert _pick_normalized_name(names) == 'ООО "ЮГ Поволжье"'
+
+    names = ["фильтрационные технологии"]
+    assert _pick_normalized_name(names) == "фильтрационные технологии"
+
+    names = ["ИП Иванов Иван Иванович"]
+    assert _pick_normalized_name(names) == "ИП Иванов Иван Иванович"
+
+    names = ["поставщик 1"]
+    assert _pick_normalized_name(names) == "поставщик 1"
+
+
+def test_normalize_organization_name_sync_goods_and_works_sheet() -> None:
+    result = IMCPResult(
+        goods_imcp_avg=Decimal(1000),
+        goods_vat_info=VatInfo(rate=20, included=True),
+        works_imcp_avg=Decimal(1000),
+        works_imcp_limit=Decimal(1200),
+        goods_data=GoodsData(
+            organizations=[
+                Organization(
+                    id=1,
+                    name="Орг-ция 1",
+                ),
+                Organization(
+                    id=2,
+                    name="Орг-ция 2",
+                ),
+                Organization(
+                    id=3,
+                    name="Орг-ция 3",
+                ),
+            ],
+            goods_items=[
+                GoodsItem(
+                    id=1,
+                    name="ТО АПС",
+                    unit_of_measure="месяц",
+                    unit_imcp=Decimal(100),
+                    quantity=Decimal(1),
+                    item_imcp=Decimal(100),
+                )
+            ],
+            price_cells=[
+                PriceCell(organization_id=1, item_id=1, price=Decimal(100)),
+                PriceCell(organization_id=2, item_id=1, price=Decimal(100)),
+                PriceCell(organization_id=3, item_id=1, price=Decimal(100)),
+            ],
+        ),
+        works_orgs_amounts=[
+            WorksOrgAmountResult(id=1, name="ООО Дзета Монтаж", amount=Decimal(1000)),
+            WorksOrgAmountResult(id=2, name="ООО Эта", amount=Decimal(1000)),
+            WorksOrgAmountResult(id=3, name='ООО "ЮГ Поволжье"', amount=Decimal(1000)),
+        ],
+    )
+
+    normalized = _normalize_organization_names(result)
+
+    assert normalized.goods_data is not None
+    assert normalized.works_orgs_amounts is not None
+    assert [org.name for org in normalized.goods_data.organizations] == [
+        "ООО Дзета Монтаж",
+        "ООО Эта",
+        'ООО "ЮГ Поволжье"',
+    ]
+    assert [org.name for org in normalized.works_orgs_amounts] == [
+        "ООО Дзета Монтаж",
+        "ООО Эта",
+        'ООО "ЮГ Поволжье"',
+    ]
