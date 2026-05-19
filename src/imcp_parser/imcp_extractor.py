@@ -90,7 +90,7 @@ def _normalize_organization_names(result: IMCPResult) -> IMCPResult:
 
 
 def _build_sheet(ws: Worksheet) -> BaseSheet | None:
-    for sheet_cls in BaseSheet.registered():
+    for sheet_cls in BaseSheet.registry():
         if sheet_cls.is_me(ws):
             return sheet_cls(ws)
     return None

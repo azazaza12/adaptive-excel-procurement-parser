@@ -25,7 +25,7 @@ class BaseSheet[SheetResultT](ABC):
         BaseSheet._registry.append(cls)
 
     @classmethod
-    def registered(cls) -> tuple[type[BaseSheet], ...]:
+    def registry(cls) -> tuple[type[BaseSheet], ...]:
         return tuple(BaseSheet._registry)
 
     @classmethod
