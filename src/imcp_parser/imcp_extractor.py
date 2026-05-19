@@ -7,7 +7,7 @@ from app.domain.entities.imcp.result import IMCPResult
 from app.domain.exceptions import (
     IMCPNotFoundError,
 )
-from app.domain.service.excel_imcp_extractor import IExcelIMCPExtractor
+from app.domain.ports.excel_imcp_extractor import IExcelIMCPExtractor
 from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
 from app.infrastructure.extraction.imcp.common import norm_text
 from app.infrastructure.extraction.imcp.result_updater import update_result
