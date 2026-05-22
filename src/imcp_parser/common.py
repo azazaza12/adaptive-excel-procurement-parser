@@ -78,7 +78,8 @@ def to_decimal(value: Any) -> Decimal | None:
 
     if result is None:
         return None
-    if result.as_tuple().exponent < _TWO_DECIMAL_PLACES_EXPONENT:
+    exp = result.as_tuple().exponent
+    if isinstance(exp, int) and exp < _TWO_DECIMAL_PLACES_EXPONENT:
         return result.quantize(_TWO_DECIMAL_PLACES, rounding=ROUND_HALF_UP)
     return result
 
