@@ -126,8 +126,7 @@ class WorksSheet(BaseSheet[WorksSheetParseResult]):
                 )
             )
             org_block_end_row_idx = row_idx
-        organizations = organizations or None
-        return organizations, org_block_end_row_idx
+        return organizations or None, org_block_end_row_idx
 
     def extract_imcp_from_imcp_block(
         self,

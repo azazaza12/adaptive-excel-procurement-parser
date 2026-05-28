@@ -34,7 +34,7 @@ class BaseSheet[SheetResultT](ABC):
         pass
 
     @abstractmethod
-    def extract(self) -> SheetResultT:
+    def extract(self) -> SheetResultT | None:
         pass
 
     def row_has_anchor(self, *, row_idx: int, anchor: BaseAnchor) -> bool:
@@ -66,6 +66,6 @@ class BaseSheet[SheetResultT](ABC):
     def _has_title_anchors(self, anchor: BaseAnchor) -> bool:
         return anchor.matches(self.ws.title)
 
-    def _has_table_header(self, anchors: Sequence[BaseAnchor, ...]) -> bool:
+    def _has_table_header(self, anchors: Sequence[BaseAnchor]) -> bool:
         headers = [self._find_header_by(anchor) for anchor in anchors]
         return bool(all(header is not None for header in headers))

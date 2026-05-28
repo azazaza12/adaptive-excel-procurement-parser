@@ -72,20 +72,22 @@ def _normalize_organization_names(result: IMCPResult) -> IMCPResult:
     ):
         names_by_id: dict[int, list[str]] = {}
         normalized_names_by_id: dict[int, str] = {}
-        for org in result.goods_data.organizations:
-            names_by_id.setdefault(org.id, []).append(org.name)
-        for org in result.works_orgs_amounts:
-            names_by_id.setdefault(org.id, []).append(org.name)
+        for goods_org in result.goods_data.organizations:
+            names_by_id.setdefault(goods_org.id, []).append(goods_org.name)
+        for works_org in result.works_orgs_amounts:
+            names_by_id.setdefault(works_org.id, []).append(works_org.name)
 
         for org_id, names in names_by_id.items():
             normalized_name = _pick_normalized_name(names)
             normalized_names_by_id[org_id] = normalized_name
-        for i, org in enumerate(result.goods_data.organizations):
-            if org.id in normalized_names_by_id:
-                result.goods_data.organizations[i].name = normalized_names_by_id[org.id]
-        for i, org in enumerate(result.works_orgs_amounts):
-            if org.id in normalized_names_by_id:
-                result.works_orgs_amounts[i].name = normalized_names_by_id[org.id]
+        for i, goods_org in enumerate(result.goods_data.organizations):
+            if goods_org.id in normalized_names_by_id:
+                result.goods_data.organizations[i].name = normalized_names_by_id[
+                    goods_org.id
+                ]
+        for i, works_org in enumerate(result.works_orgs_amounts):
+            if works_org.id in normalized_names_by_id:
+                result.works_orgs_amounts[i].name = normalized_names_by_id[works_org.id]
     return result
 
 

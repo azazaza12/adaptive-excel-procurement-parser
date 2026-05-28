@@ -102,10 +102,10 @@ class GoodsSheet(BaseSheet):
         if header is None:
             return None
 
-        price_block_end_col_idx = unit_imcp_header.col_idx - 1
+        price_block_end_col_idx = header.unit_imcp_col_idx - 1
         parsed_organizations = self._extract_organizations(
-            header_row_idx=price_block_header.row_idx,
-            start_col_idx=price_block_header.col_idx,
+            header_row_idx=header.end_row_idx - 1,
+            start_col_idx=header.price_block_start_col_idx,
             end_col_idx=price_block_end_col_idx,
         )
 
@@ -243,8 +243,7 @@ class GoodsSheet(BaseSheet):
             )
             prices.extend(prices_for_item)
             block_end_row_idx = row_idx
-        goods_items = goods_items or None
-        return goods_items, prices, block_end_row_idx
+        return (goods_items or None), prices, block_end_row_idx
 
     def extract_imcp_from_imcp_block(
         self, *, block_end_row_idx: int | None, item_imcp_col_idx: int
