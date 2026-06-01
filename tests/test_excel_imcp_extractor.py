@@ -1,6 +1,8 @@
 from decimal import Decimal
 from io import BytesIO
 
+from openpyxl import Workbook
+
 from app.domain.entities.imcp.goods_result import (
     GoodsData,
     GoodsItem,
@@ -16,7 +18,6 @@ from app.infrastructure.extraction.imcp.imcp_extractor import (
     _normalize_organization_names,
     _pick_normalized_name,
 )
-from openpyxl import Workbook
 
 
 _ANCHOR_AVG = (
