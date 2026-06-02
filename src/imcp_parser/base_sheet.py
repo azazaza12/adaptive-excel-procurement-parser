@@ -57,6 +57,8 @@ class BaseSheet[SheetResultT](ABC):
             for cell in row:
                 value = cell.value
                 if anchor.matches(value):
+                    if cell.column is None:
+                        continue
                     return HeaderCell(row_idx=row_idx_iter, col_idx=cell.column)
         return None
 

@@ -209,8 +209,14 @@ class GoodsSheet(BaseSheet):
             unit_imcp = to_decimal(
                 self.ws.cell(row=row_idx, column=header.unit_imcp_col_idx).value
             )
-            unit_of_measure = to_stripped_str(
-                self.ws.cell(row=row_idx, column=header.unit_of_measure_col_idx).value
+            unit_of_measure = (
+                to_stripped_str(
+                    self.ws.cell(
+                        row=row_idx, column=header.unit_of_measure_col_idx
+                    ).value
+                )
+                if header.unit_of_measure_col_idx is not None
+                else None
             )
             quantity = to_decimal(
                 self.ws.cell(row=row_idx, column=header.quantity_col_idx).value
