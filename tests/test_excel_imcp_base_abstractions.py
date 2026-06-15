@@ -1,7 +1,4 @@
-from app.infrastructure.extraction.imcp.base_abstractions import (
-    AnyOfAnchors,
-    MatchAnchor,
-)
+from app.infrastructure.extraction.imcp import AnyOfAnchors, MatchAnchor
 
 
 def test_match_anchor_matches_words_by_prefix() -> None:

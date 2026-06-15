@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from decimal import Decimal
 
+from app.domain.entities.imcp import VatInfo
 from app.domain.entities.imcp.goods_result import GoodsData
-from app.domain.entities.imcp.result import VatInfo
 from app.domain.entities.imcp.works_result import WorksOrgAmountResult
 
 

@@ -5,7 +5,7 @@ from typing import ClassVar
 
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.infrastructure.extraction.imcp.base_abstractions import BaseAnchor
+from .base_abstractions import BaseAnchor
 
 
 @dataclass(slots=True)

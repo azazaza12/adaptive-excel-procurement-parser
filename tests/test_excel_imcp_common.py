@@ -1,10 +1,7 @@
 from decimal import Decimal
 
-from app.domain.entities.imcp.result import VatInfo
-from app.infrastructure.extraction.imcp.common import (
-    parse_vat_info_from_cell_text,
-    to_decimal,
-)
+from app.domain.entities.imcp import VatInfo
+from app.infrastructure.extraction.imcp import parse_vat_info_from_cell_text, to_decimal
 
 
 VAT_RATE_PERCENT = 20

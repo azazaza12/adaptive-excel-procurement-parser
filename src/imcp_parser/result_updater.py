@@ -1,11 +1,9 @@
 from functools import singledispatch
 
-from app.domain.entities.imcp.result import IMCPResult
+from app.domain.entities.imcp import IMCPResult
 from app.domain.exceptions import UnsupportedSheetResultError
-from app.infrastructure.extraction.imcp.models import (
-    GoodsSheetParseResult,
-    WorksSheetParseResult,
-)
+
+from .models import GoodsSheetParseResult, WorksSheetParseResult
 
 
 @singledispatch

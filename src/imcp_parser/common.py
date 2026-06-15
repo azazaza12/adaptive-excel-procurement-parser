@@ -2,7 +2,7 @@ import re
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from typing import Any
 
-from app.domain.entities.imcp.result import VatInfo
+from app.domain.entities.imcp import VatInfo
 
 
 _NUM_RE = re.compile(r"[-+]?\d+(?:[.,]\d+)?")

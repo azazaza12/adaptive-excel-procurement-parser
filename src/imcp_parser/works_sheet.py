@@ -3,20 +3,18 @@ from decimal import Decimal
 
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.domain.entities.imcp.result import VatInfo
+from app.domain.entities.imcp import VatInfo
 from app.domain.entities.imcp.works_result import WorksOrgAmountResult
-from app.infrastructure.extraction.imcp.base_abstractions import (
-    AnyOfAnchors,
-    MatchAnchor,
-)
-from app.infrastructure.extraction.imcp.base_sheet import BaseSheet
-from app.infrastructure.extraction.imcp.common import (
+
+from .base_abstractions import AnyOfAnchors, MatchAnchor
+from .base_sheet import BaseSheet
+from .common import (
     parse_number,
     parse_vat_info_from_cell_text,
     to_decimal,
     to_stripped_str,
 )
-from app.infrastructure.extraction.imcp.models import WorksSheetParseResult
+from .models import WorksSheetParseResult
 
 
 _WORKS_SHEET_TITLE_ANCHORS = AnyOfAnchors(MatchAnchor("работ"), MatchAnchor("услуг"))
