@@ -102,6 +102,13 @@ for org in result.goods_data.organizations:
 Если ни один лист не распознан, поднимается `IMCPNotFoundError` — вызывающий
 код отличает «это не обоснование НМЦД» от «данные не извлеклись».
 
+Готовый к запуску пример — `examples/parse_goods_sheet.py`: собирает товарный
+лист в памяти и печатает разобранный результат.
+
+```bash
+python examples/parse_goods_sheet.py
+```
+
 ## Разработка
 
 ```bash
