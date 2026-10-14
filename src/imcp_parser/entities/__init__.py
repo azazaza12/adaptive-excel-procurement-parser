@@ -1,17 +1,11 @@
-from .fields import (
-    IMCPAvgField,
-    IMCPLimitField,
-    OrganizationSpecificationField,
-    OrganizationTotalAmountField,
-)
+from .goods_result import GoodsData
 from .result import IMCPResult, VatInfo
+from .works_result import WorksOrgAmountResult
 
 
 __all__ = [
-    "IMCPAvgField",
-    "IMCPLimitField",
+    "GoodsData",
     "IMCPResult",
-    "OrganizationSpecificationField",
-    "OrganizationTotalAmountField",
     "VatInfo",
+    "WorksOrgAmountResult",
 ]

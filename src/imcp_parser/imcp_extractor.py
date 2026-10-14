@@ -3,12 +3,11 @@ from io import BytesIO
 from openpyxl import load_workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.domain.entities.imcp import IMCPResult
-from app.domain.exceptions import IMCPNotFoundError
-from app.domain.ports import IExcelIMCPExtractor
-
 from .base_sheet import BaseSheet
 from .common import norm_text
+from .entities import IMCPResult
+from .exceptions import IMCPNotFoundError
+from .ports import IExcelIMCPExtractor
 from .result_updater import update_result
 
 

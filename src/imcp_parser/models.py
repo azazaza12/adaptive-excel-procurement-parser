@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from decimal import Decimal
 
-from app.domain.entities.imcp import VatInfo
-from app.domain.entities.imcp.goods_result import GoodsData
-from app.domain.entities.imcp.works_result import WorksOrgAmountResult
+from .entities import VatInfo
+from .entities.goods_result import GoodsData
+from .entities.works_result import WorksOrgAmountResult
 
 
 @dataclass(slots=True)

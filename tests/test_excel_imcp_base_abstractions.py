@@ -1,4 +1,4 @@
-from app.infrastructure.extraction.imcp import AnyOfAnchors, MatchAnchor
+from imcp_parser import AnyOfAnchors, MatchAnchor
 
 
 def test_match_anchor_matches_words_by_prefix() -> None:

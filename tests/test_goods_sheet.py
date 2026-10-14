@@ -2,8 +2,8 @@ from decimal import Decimal
 
 from openpyxl import Workbook
 
-from app.domain.entities.imcp import VatInfo
-from app.infrastructure.extraction.imcp import GoodsSheet
+from imcp_parser import GoodsSheet
+from imcp_parser.entities import VatInfo
 
 
 _ANCHOR_AVG = (

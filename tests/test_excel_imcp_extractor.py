@@ -3,16 +3,16 @@ from io import BytesIO
 
 from openpyxl import Workbook
 
-from app.domain.entities.imcp import IMCPResult, VatInfo
-from app.domain.entities.imcp.goods_result import (
+from imcp_parser import OpenpyxlExcelIMCPExtractor
+from imcp_parser.entities import IMCPResult, VatInfo
+from imcp_parser.entities.goods_result import (
     GoodsData,
     GoodsItem,
     Organization,
     PriceCell,
 )
-from app.domain.entities.imcp.works_result import WorksOrgAmountResult
-from app.infrastructure.extraction.imcp import OpenpyxlExcelIMCPExtractor
-from app.infrastructure.extraction.imcp.imcp_extractor import (
+from imcp_parser.entities.works_result import WorksOrgAmountResult
+from imcp_parser.imcp_extractor import (
     _is_placeholder,
     _normalize_name,
     _normalize_organization_names,

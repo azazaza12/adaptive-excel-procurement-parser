@@ -3,14 +3,6 @@ from decimal import Decimal
 
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.domain.entities.imcp import VatInfo
-from app.domain.entities.imcp.goods_result import (
-    GoodsData,
-    GoodsItem,
-    Organization,
-    PriceCell,
-)
-
 from .base_abstractions import (
     AllOfAnchors,
     AnyOfAnchors,
@@ -23,6 +15,13 @@ from .common import (
     parse_vat_info_from_cell_text,
     to_decimal,
     to_stripped_str,
+)
+from .entities import VatInfo
+from .entities.goods_result import (
+    GoodsData,
+    GoodsItem,
+    Organization,
+    PriceCell,
 )
 from .models import GoodsSheetParseResult
 

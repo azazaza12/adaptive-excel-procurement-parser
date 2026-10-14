@@ -3,9 +3,6 @@ from decimal import Decimal
 
 from openpyxl.worksheet.worksheet import Worksheet
 
-from app.domain.entities.imcp import VatInfo
-from app.domain.entities.imcp.works_result import WorksOrgAmountResult
-
 from .base_abstractions import AnyOfAnchors, MatchAnchor
 from .base_sheet import BaseSheet
 from .common import (
@@ -14,6 +11,8 @@ from .common import (
     to_decimal,
     to_stripped_str,
 )
+from .entities import VatInfo
+from .entities.works_result import WorksOrgAmountResult
 from .models import WorksSheetParseResult
 
 

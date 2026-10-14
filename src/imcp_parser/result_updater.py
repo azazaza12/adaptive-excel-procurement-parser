@@ -1,8 +1,7 @@
 from functools import singledispatch
 
-from app.domain.entities.imcp import IMCPResult
-from app.domain.exceptions import UnsupportedSheetResultError
-
+from .entities import IMCPResult
+from .exceptions import UnsupportedSheetResultError
 from .models import GoodsSheetParseResult, WorksSheetParseResult
 
 
